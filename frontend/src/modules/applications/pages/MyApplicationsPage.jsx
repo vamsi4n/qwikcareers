@@ -1,7 +1,17 @@
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
+import {
+  DocumentTextIcon,
+  MapPinIcon,
+  BriefcaseIcon,
+  CalendarIcon,
+  EyeIcon,
+  ArrowRightIcon
+} from '@heroicons/react/24/outline';
 import { getMyApplications, withdrawApplication } from '../../../store/slices/applicationSlice';
+import AnimatedCard from '../../../components/animations/AnimatedCard';
+import GlassCard from '../../../components/ui/GlassCard';
 
 export default function MyApplicationsPage() {
   const navigate = useNavigate();
@@ -56,152 +66,168 @@ export default function MyApplicationsPage() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <h1 className="text-3xl font-bold text-gray-900 mb-8">My Applications</h1>
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="mb-8 animate-fade-in">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">My Applications</h1>
+          <p className="text-gray-600">Track and manage your job applications</p>
+        </div>
 
-      {/* Status Filters */}
-      <div className="bg-white rounded-lg shadow mb-6 p-4">
-        <div className="flex flex-wrap gap-2">
-          {Object.entries(statusCounts).map(([status, count]) => (
-            <button
-              key={status}
-              onClick={() => setFilter(status)}
-              className={`px-4 py-2 rounded-md font-medium transition capitalize ${
-                filter === status
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              {status} ({count})
-            </button>
-          ))}
-        </div>
-      </div>
+        {/* Status Filters */}
+        <GlassCard className="mb-6 p-4">
+          <div className="flex flex-wrap gap-2">
+            {Object.entries(statusCounts).map(([status, count]) => (
+              <button
+                key={status}
+                onClick={() => setFilter(status)}
+                className={`px-4 py-2 rounded-lg font-medium transition capitalize ${
+                  filter === status
+                    ? 'bg-blue-600 text-white shadow-sm'
+                    : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
+                }`}
+              >
+                {status} ({count})
+              </button>
+            ))}
+          </div>
+        </GlassCard>
 
-      {isLoading ? (
-        <div className="text-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading applications...</p>
-        </div>
-      ) : filteredApplications.length === 0 ? (
-        <div className="text-center py-12">
-          <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-          </svg>
-          <p className="text-gray-600 mb-4">
-            {filter === 'all'
-              ? 'You haven\'t applied to any jobs yet'
-              : `No applications with status "${filter}"`}
-          </p>
-          {filter === 'all' && (
-            <button
-              onClick={() => navigate('/jobs')}
-              className="text-blue-600 hover:text-blue-700 font-semibold"
-            >
-              Browse Jobs →
-            </button>
-          )}
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {filteredApplications.map((application) => (
-            <div key={application._id} className="bg-white rounded-lg shadow p-6">
-              <div className="flex justify-between items-start mb-4">
-                <div className="flex-1 cursor-pointer" onClick={() => navigate(`/jobs/${application.job?._id}`)}>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-1">
-                    {application.job?.title || 'Job Title'}
-                  </h3>
-                  <p className="text-blue-600 font-medium mb-2">
-                    {application.job?.company?.name || 'Company Name'}
-                  </p>
-                  <div className="flex flex-wrap gap-3 text-sm text-gray-600">
-                    <span className="flex items-center">
-                      <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                      </svg>
-                      {application.job?.location?.city}, {application.job?.location?.state}
-                    </span>
-                    <span className="flex items-center">
-                      <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                      </svg>
-                      {application.job?.jobType}
-                    </span>
+        {isLoading ? (
+          <GlassCard className="text-center py-20">
+            <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto"></div>
+            <p className="mt-4 text-gray-600">Loading applications...</p>
+          </GlassCard>
+        ) : filteredApplications.length === 0 ? (
+          <GlassCard className="text-center py-20">
+            <DocumentTextIcon className="w-20 h-20 mx-auto text-gray-300 mb-4" />
+            <h3 className="text-xl font-semibold text-gray-700 mb-2">
+              {filter === 'all'
+                ? 'No applications yet'
+                : `No ${filter} applications`}
+            </h3>
+            <p className="text-gray-600 mb-6">
+              {filter === 'all'
+                ? 'Start applying to jobs to track your progress'
+                : `You don't have any applications with status "${filter}"`}
+            </p>
+            {filter === 'all' && (
+              <button
+                onClick={() => navigate('/jobs')}
+                className="inline-flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition font-medium"
+              >
+                Browse Jobs
+                <ArrowRightIcon className="w-4 h-4" />
+              </button>
+            )}
+          </GlassCard>
+        ) : (
+          <div className="space-y-4">
+          {filteredApplications.map((application, index) => (
+            <AnimatedCard key={application._id} delay={index * 50} animation="fadeUp">
+              <GlassCard className="p-6 transition hover:shadow-lg hover:scale-[1.01]">
+                <div className="flex justify-between items-start mb-4">
+                  <div className="flex-1 cursor-pointer" onClick={() => navigate(`/jobs/${application.job?._id}`)}>
+                    <h3 className="text-xl font-bold text-gray-900 mb-2 hover:text-blue-600 transition">
+                      {application.job?.title || 'Job Title'}
+                    </h3>
+                    <p className="text-blue-600 font-semibold mb-3 flex items-center gap-2">
+                      <span className="w-2 h-2 bg-blue-600 rounded-full"></span>
+                      {application.job?.company?.name || 'Company Name'}
+                    </p>
+                    <div className="flex flex-wrap gap-3 text-sm">
+                      <div className="flex items-center gap-1.5 text-gray-600">
+                        <MapPinIcon className="w-4 h-4" />
+                        <span>{application.job?.location?.city}, {application.job?.location?.state}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 text-gray-600">
+                        <BriefcaseIcon className="w-4 h-4" />
+                        <span className="capitalize">{application.job?.jobType}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <span
+                    className={`px-4 py-2 rounded-lg text-sm font-semibold capitalize ${getStatusColor(
+                      application.status
+                    )}`}
+                  >
+                    {application.status}
+                  </span>
+                </div>
+
+                <div className="bg-gray-50 rounded-lg p-4 mb-4 border border-gray-100">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                    <div>
+                      <div className="flex items-center gap-1.5 text-gray-500 mb-1">
+                        <CalendarIcon className="w-4 h-4" />
+                        <span className="font-medium">Applied</span>
+                      </div>
+                      <p className="font-semibold text-gray-900">
+                        {new Date(application.createdAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                    {application.viewedAt && (
+                      <div>
+                        <div className="flex items-center gap-1.5 text-gray-500 mb-1">
+                          <EyeIcon className="w-4 h-4" />
+                          <span className="font-medium">Viewed</span>
+                        </div>
+                        <p className="font-semibold text-gray-900">
+                          {new Date(application.viewedAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                    )}
+                    {application.interviewDate && (
+                      <div>
+                        <div className="flex items-center gap-1.5 text-purple-600 mb-1">
+                          <CalendarIcon className="w-4 h-4" />
+                          <span className="font-medium">Interview</span>
+                        </div>
+                        <p className="font-semibold text-gray-900">
+                          {new Date(application.interviewDate).toLocaleDateString()}
+                        </p>
+                      </div>
+                    )}
+                    {application.statusUpdatedAt && (
+                      <div>
+                        <span className="text-gray-500 font-medium block mb-1">Last Updated</span>
+                        <p className="font-semibold text-gray-900">
+                          {new Date(application.statusUpdatedAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </div>
-                <span
-                  className={`px-4 py-2 rounded-full text-sm font-medium capitalize ${getStatusColor(
-                    application.status
-                  )}`}
-                >
-                  {application.status}
-                </span>
-              </div>
 
-              <div className="bg-gray-50 rounded-lg p-4 mb-4">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                  <div>
-                    <span className="text-gray-500">Applied</span>
-                    <p className="font-medium text-gray-900">
-                      {new Date(application.createdAt).toLocaleDateString()}
+                {application.notes && (
+                  <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-100">
+                    <p className="text-sm text-gray-700">
+                      <span className="font-semibold text-blue-900">Notes:</span> {application.notes}
                     </p>
                   </div>
-                  {application.viewedAt && (
-                    <div>
-                      <span className="text-gray-500">Viewed</span>
-                      <p className="font-medium text-gray-900">
-                        {new Date(application.viewedAt).toLocaleDateString()}
-                      </p>
-                    </div>
-                  )}
-                  {application.interviewDate && (
-                    <div>
-                      <span className="text-gray-500">Interview</span>
-                      <p className="font-medium text-gray-900">
-                        {new Date(application.interviewDate).toLocaleDateString()}
-                      </p>
-                    </div>
-                  )}
-                  {application.statusUpdatedAt && (
-                    <div>
-                      <span className="text-gray-500">Last Updated</span>
-                      <p className="font-medium text-gray-900">
-                        {new Date(application.statusUpdatedAt).toLocaleDateString()}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {application.notes && (
-                <div className="mb-4">
-                  <p className="text-sm text-gray-600">
-                    <span className="font-medium">Notes:</span> {application.notes}
-                  </p>
-                </div>
-              )}
-
-              <div className="flex gap-3">
-                <button
-                  onClick={() => navigate(`/applications/${application._id}`)}
-                  className="flex-1 border border-blue-600 text-blue-600 py-2 rounded-md hover:bg-blue-50 transition font-medium"
-                >
-                  View Details
-                </button>
-                {['pending', 'reviewing'].includes(application.status) && (
-                  <button
-                    onClick={() => handleWithdraw(application._id)}
-                    className="border border-red-600 text-red-600 px-6 py-2 rounded-md hover:bg-red-50 transition font-medium"
-                  >
-                    Withdraw
-                  </button>
                 )}
-              </div>
-            </div>
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => navigate(`/applications/${application._id}`)}
+                    className="flex-1 border-2 border-blue-600 text-blue-600 py-2.5 rounded-lg hover:bg-blue-50 transition font-semibold"
+                  >
+                    View Details
+                  </button>
+                  {['pending', 'reviewing'].includes(application.status) && (
+                    <button
+                      onClick={() => handleWithdraw(application._id)}
+                      className="border-2 border-red-600 text-red-600 px-6 py-2.5 rounded-lg hover:bg-red-50 transition font-semibold"
+                    >
+                      Withdraw
+                    </button>
+                  )}
+                </div>
+              </GlassCard>
+            </AnimatedCard>
           ))}
         </div>
       )}
+      </div>
     </div>
   );
 }

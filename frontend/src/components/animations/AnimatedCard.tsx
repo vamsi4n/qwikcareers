@@ -1,4 +1,15 @@
+import React from 'react';
 import { useScrollAnimation } from '../../hooks/useScrollAnimation';
+
+type AnimationType = 'fadeUp' | 'fadeDown' | 'fadeLeft' | 'fadeRight' | 'scale' | 'none';
+
+interface AnimatedCardProps {
+  children: React.ReactNode;
+  delay?: number;
+  animation?: AnimationType;
+  className?: string;
+  hover?: boolean;
+}
 
 /**
  * Animated Card Component with scroll-triggered animations
@@ -9,10 +20,10 @@ export default function AnimatedCard({
   animation = 'fadeUp',
   className = '',
   hover = true
-}) {
+}: AnimatedCardProps) {
   const { ref, isVisible } = useScrollAnimation({ threshold: 0.1, once: true });
 
-  const animations = {
+  const animations: Record<AnimationType, string> = {
     fadeUp: 'opacity-0 translate-y-8',
     fadeDown: 'opacity-0 -translate-y-8',
     fadeLeft: 'opacity-0 -translate-x-8',

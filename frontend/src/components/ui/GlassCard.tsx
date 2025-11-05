@@ -1,3 +1,13 @@
+import React from 'react';
+
+interface GlassCardProps {
+  children: React.ReactNode;
+  className?: string;
+  blur?: 'sm' | 'md' | 'lg' | 'xl';
+  border?: boolean;
+  shadow?: boolean;
+}
+
 /**
  * Glassmorphism Card Component
  */
@@ -7,8 +17,8 @@ export default function GlassCard({
   blur = 'md',
   border = true,
   shadow = true
-}) {
-  const blurClasses = {
+}: GlassCardProps) {
+  const blurClasses: Record<string, string> = {
     sm: 'backdrop-blur-sm',
     md: 'backdrop-blur-md',
     lg: 'backdrop-blur-lg',

@@ -1,14 +1,33 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, RefObject } from 'react';
+
+interface ScrollAnimationOptions {
+  threshold?: number | number[];
+  rootMargin?: string;
+  once?: boolean;
+  root?: Element | null;
+}
+
+interface ScrollAnimationReturn {
+  ref: RefObject<HTMLDivElement>;
+  isVisible: boolean;
+}
+
+interface ScrollRevealReturn {
+  ref: RefObject<HTMLDivElement>;
+  shouldAnimate: boolean;
+}
 
 /**
  * Custom hook for scroll-triggered animations
- * @param {Object} options - Intersection Observer options
- * @returns {Object} - Reference and isVisible state
+ * @param options - Intersection Observer options
+ * @returns Reference and isVisible state
  */
-export const useScrollAnimation = (options = {}) => {
-  const ref = useRef(null);
-  const [isVisible, setIsVisible] = useState(false);
-  const [hasAnimated, setHasAnimated] = useState(false);
+export const useScrollAnimation = (
+  options: ScrollAnimationOptions = {}
+): ScrollAnimationReturn => {
+  const ref = useRef<HTMLDivElement>(null);
+  const [isVisible, setIsVisible] = useState<boolean>(false);
+  const [hasAnimated, setHasAnimated] = useState<boolean>(false);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -23,7 +42,7 @@ export const useScrollAnimation = (options = {}) => {
       {
         threshold: options.threshold || 0.1,
         rootMargin: options.rootMargin || '0px',
-        ...options
+        root: options.root || null
       }
     );
 
@@ -37,7 +56,7 @@ export const useScrollAnimation = (options = {}) => {
         observer.unobserve(currentRef);
       }
     };
-  }, [hasAnimated, options]);
+  }, [hasAnimated, options.once, options.threshold, options.rootMargin, options.root]);
 
   return { ref, isVisible };
 };
@@ -45,9 +64,9 @@ export const useScrollAnimation = (options = {}) => {
 /**
  * Hook for progressive scroll reveal
  */
-export const useScrollReveal = (delay = 0) => {
+export const useScrollReveal = (delay: number = 0): ScrollRevealReturn => {
   const { ref, isVisible } = useScrollAnimation({ threshold: 0.2, once: true });
-  const [shouldAnimate, setShouldAnimate] = useState(false);
+  const [shouldAnimate, setShouldAnimate] = useState<boolean>(false);
 
   useEffect(() => {
     if (isVisible) {
@@ -64,8 +83,8 @@ export const useScrollReveal = (delay = 0) => {
 /**
  * Hook for parallax scroll effect
  */
-export const useParallax = (speed = 0.5) => {
-  const [offset, setOffset] = useState(0);
+export const useParallax = (speed: number = 0.5): number => {
+  const [offset, setOffset] = useState<number>(0);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -82,16 +101,16 @@ export const useParallax = (speed = 0.5) => {
 /**
  * Hook for scroll progress
  */
-export const useScrollProgress = () => {
-  const [progress, setProgress] = useState(0);
+export const useScrollProgress = (): number => {
+  const [progress, setProgress] = useState<number>(0);
 
   useEffect(() => {
     const handleScroll = () => {
       const windowHeight = window.innerHeight;
       const documentHeight = document.documentElement.scrollHeight - windowHeight;
       const scrolled = window.pageYOffset;
-      const progress = (scrolled / documentHeight) * 100;
-      setProgress(progress);
+      const progressValue = (scrolled / documentHeight) * 100;
+      setProgress(progressValue);
     };
 
     window.addEventListener('scroll', handleScroll);
@@ -104,9 +123,9 @@ export const useScrollProgress = () => {
 /**
  * Hook for detecting scroll direction
  */
-export const useScrollDirection = () => {
-  const [scrollDirection, setScrollDirection] = useState('up');
-  const [lastScrollY, setLastScrollY] = useState(0);
+export const useScrollDirection = (): 'up' | 'down' => {
+  const [scrollDirection, setScrollDirection] = useState<'up' | 'down'>('up');
+  const [lastScrollY, setLastScrollY] = useState<number>(0);
 
   useEffect(() => {
     const handleScroll = () => {

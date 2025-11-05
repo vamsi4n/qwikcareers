@@ -17,6 +17,9 @@ const jobAlertRoutes = require('./modules/job-alerts/routes/job-alert.routes');
 const messagingRoutes = require('./modules/messaging/routes/messaging.routes');
 const notificationRoutes = require('./modules/notifications/routes/notification.routes');
 const reviewRoutes = require('./modules/reviews/routes/review.routes');
+const skillRoutes = require('./modules/skills/routes/skill.routes');
+const categoryRoutes = require('./modules/categories/routes/category.routes');
+const industryRoutes = require('./modules/industries/routes/industry.routes');
 const { errorConverter, errorHandler } = require('./shared/middleware/error-handler.middleware');
 const notFound = require('./shared/middleware/not-found.middleware');
 const ApiError = require('./shared/utils/ApiError');
@@ -64,6 +67,9 @@ app.use('/api/v1/job-alerts', jobAlertRoutes);
 app.use('/api/v1/messaging', messagingRoutes);
 app.use('/api/v1/notifications', notificationRoutes);
 app.use('/api/v1/reviews', reviewRoutes);
+app.use('/api/v1/skills', skillRoutes);
+app.use('/api/v1/categories', categoryRoutes);
+app.use('/api/v1/industries', industryRoutes);
 
 // 404 handler
 app.use(notFound);

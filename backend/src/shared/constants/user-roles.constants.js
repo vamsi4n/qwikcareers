@@ -1,2 +1,5 @@
-// user-roles.constants.js
-// TODO: Implement functionality
+module.exports = {
+  JOBSEEKER: 'jobseeker',
+  EMPLOYER: 'employer',
+  ADMIN: 'admin',
+};

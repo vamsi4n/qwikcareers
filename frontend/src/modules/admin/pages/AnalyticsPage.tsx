@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   UserGroupIcon,
   BriefcaseIcon,
@@ -13,6 +13,24 @@ import {
 } from '@heroicons/react/24/outline';
 import AnimatedCard from '../../../shared/components/animations/AnimatedCard';
 import GlassCard from '../../../shared/components/ui/GlassCard';
+import {
+  LineChartComponent,
+  BarChartComponent,
+  AreaChartComponent,
+  PieChartComponent
+} from '../../../shared/components/charts';
+import { useAppDispatch, useAppSelector } from '../../../store';
+import {
+  fetchPlatformAnalytics,
+  fetchUserAnalytics,
+  fetchJobAnalytics,
+  setAnalyticsPeriod,
+  selectPlatformAnalytics,
+  selectUserAnalytics,
+  selectJobAnalytics,
+  selectAnalyticsLoading,
+  selectAnalyticsPeriod
+} from '../../../store/slices/adminSlice';
 
 type TimePeriod = '7days' | '30days' | '90days' | 'all';
 
@@ -28,11 +46,26 @@ interface PlatformStats {
 }
 
 export default function AnalyticsPage() {
-  const [timePeriod, setTimePeriod] = useState<TimePeriod>('30days');
-  const [isLoading, setIsLoading] = useState(false);
+  const dispatch = useAppDispatch();
+  const timePeriod = useAppSelector(selectAnalyticsPeriod);
+  const platformAnalytics = useAppSelector(selectPlatformAnalytics);
+  const userAnalytics = useAppSelector(selectUserAnalytics);
+  const jobAnalytics = useAppSelector(selectJobAnalytics);
+  const isLoading = useAppSelector(selectAnalyticsLoading);
 
-  // TODO: Replace with actual API call based on time period
-  // Example: useEffect(() => { dispatch(fetchAnalytics(timePeriod)); }, [timePeriod]);
+  // Fetch analytics data when component mounts or time period changes
+  useEffect(() => {
+    dispatch(fetchPlatformAnalytics({ period: timePeriod }));
+    dispatch(fetchUserAnalytics({ period: timePeriod }));
+    dispatch(fetchJobAnalytics({ period: timePeriod }));
+  }, [dispatch, timePeriod]);
+
+  const handleTimePeriodChange = (period: TimePeriod) => {
+    dispatch(setAnalyticsPeriod(period));
+  };
+
+  // TODO: Replace with actual data from Redux state when backend is ready
+  // For now, using mock data structure that matches expected API response
   const getStatsForPeriod = (period: TimePeriod): PlatformStats => {
     // Mock data that changes based on selected period
     const mockData: Record<TimePeriod, PlatformStats> = {
@@ -81,6 +114,52 @@ export default function AnalyticsPage() {
   };
 
   const stats = getStatsForPeriod(timePeriod);
+
+  // Generate mock chart data based on time period
+  const generateChartData = (period: TimePeriod) => {
+    const dataPoints = period === '7days' ? 7 : period === '30days' ? 30 : period === '90days' ? 90 : 365;
+    const userGrowthData = [];
+    const jobPostingsData = [];
+    const applicationData = [];
+
+    for (let i = 0; i < Math.min(dataPoints, 30); i++) {
+      const date = new Date();
+      date.setDate(date.getDate() - (dataPoints - i - 1));
+      const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
+      userGrowthData.push({
+        date: dateStr,
+        users: Math.floor(Math.random() * 200 + 100),
+        jobseekers: Math.floor(Math.random() * 150 + 70),
+        employers: Math.floor(Math.random() * 50 + 20)
+      });
+
+      jobPostingsData.push({
+        date: dateStr,
+        jobs: Math.floor(Math.random() * 50 + 10),
+        active: Math.floor(Math.random() * 40 + 5),
+        filled: Math.floor(Math.random() * 10 + 2)
+      });
+
+      applicationData.push({
+        date: dateStr,
+        applications: Math.floor(Math.random() * 300 + 100),
+        accepted: Math.floor(Math.random() * 50 + 10),
+        rejected: Math.floor(Math.random() * 100 + 20)
+      });
+    }
+
+    return { userGrowthData, jobPostingsData, applicationData };
+  };
+
+  const { userGrowthData, jobPostingsData, applicationData } = generateChartData(timePeriod);
+
+  // Success rate pie chart data
+  const successRateData = [
+    { name: 'Accepted', value: Math.round(stats.totalApplications * 0.12) },
+    { name: 'Pending', value: Math.round(stats.totalApplications * 0.65) },
+    { name: 'Rejected', value: Math.round(stats.totalApplications * 0.23) }
+  ];
 
   const getTimePeriodLabel = (period: TimePeriod): string => {
     switch (period) {
@@ -209,8 +288,9 @@ export default function AnalyticsPage() {
               <ClockIcon className="w-5 h-5 text-gray-400" />
               <select
                 value={timePeriod}
-                onChange={(e) => setTimePeriod(e.target.value as TimePeriod)}
+                onChange={(e) => handleTimePeriodChange(e.target.value as TimePeriod)}
                 className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white font-medium"
+                disabled={isLoading}
               >
                 <option value="7days">Last 7 Days</option>
                 <option value="30days">Last 30 Days</option>
@@ -272,83 +352,92 @@ export default function AnalyticsPage() {
         <div className="mb-8">
           <h2 className="text-2xl font-bold text-gray-900 mb-6">Detailed Analytics</h2>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* User Growth Chart Placeholder */}
+            {/* User Growth Chart */}
             <AnimatedCard animation="fadeUp" delay={0}>
               <GlassCard className="p-6">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-bold text-gray-900">User Growth Over Time</h3>
                   <ChartBarIcon className="w-6 h-6 text-gray-400" />
                 </div>
-                <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-8 flex items-center justify-center min-h-[300px]">
-                  <div className="text-center">
-                    <ChartBarIcon className="w-16 h-16 text-blue-400 mx-auto mb-4" />
-                    <p className="text-gray-600 font-medium mb-2">Chart Component</p>
-                    <p className="text-sm text-gray-500">
-                      {/* TODO: Integrate chart library (e.g., Recharts, Chart.js, or Victory) */}
-                      TODO: Add user growth line chart
-                    </p>
-                  </div>
-                </div>
+                <LineChartComponent
+                  data={userGrowthData}
+                  xKey="date"
+                  yKeys={[
+                    { key: 'users', color: '#3B82F6', name: 'Total Users' },
+                    { key: 'jobseekers', color: '#10B981', name: 'Job Seekers' },
+                    { key: 'employers', color: '#F59E0B', name: 'Employers' }
+                  ]}
+                  height={300}
+                  showGrid={true}
+                  showLegend={true}
+                />
               </GlassCard>
             </AnimatedCard>
 
-            {/* Job Postings Chart Placeholder */}
+            {/* Job Postings Chart */}
             <AnimatedCard animation="fadeUp" delay={100}>
               <GlassCard className="p-6">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-bold text-gray-900">Job Postings Trend</h3>
                   <ChartBarIcon className="w-6 h-6 text-gray-400" />
                 </div>
-                <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-8 flex items-center justify-center min-h-[300px]">
-                  <div className="text-center">
-                    <ChartBarIcon className="w-16 h-16 text-purple-400 mx-auto mb-4" />
-                    <p className="text-gray-600 font-medium mb-2">Chart Component</p>
-                    <p className="text-sm text-gray-500">
-                      {/* TODO: Integrate chart library for job postings visualization */}
-                      TODO: Add job postings bar chart
-                    </p>
-                  </div>
-                </div>
+                <BarChartComponent
+                  data={jobPostingsData}
+                  xKey="date"
+                  yKeys={[
+                    { key: 'jobs', color: '#8B5CF6', name: 'Total Jobs' },
+                    { key: 'active', color: '#10B981', name: 'Active' },
+                    { key: 'filled', color: '#EF4444', name: 'Filled' }
+                  ]}
+                  height={300}
+                  showGrid={true}
+                  showLegend={true}
+                  stacked={false}
+                />
               </GlassCard>
             </AnimatedCard>
 
-            {/* Applications Chart Placeholder */}
+            {/* Applications Chart */}
             <AnimatedCard animation="fadeUp" delay={200}>
               <GlassCard className="p-6">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-bold text-gray-900">Application Analytics</h3>
                   <ChartBarIcon className="w-6 h-6 text-gray-400" />
                 </div>
-                <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-8 flex items-center justify-center min-h-[300px]">
-                  <div className="text-center">
-                    <ChartBarIcon className="w-16 h-16 text-green-400 mx-auto mb-4" />
-                    <p className="text-gray-600 font-medium mb-2">Chart Component</p>
-                    <p className="text-sm text-gray-500">
-                      {/* TODO: Add application statistics visualization */}
-                      TODO: Add applications area chart
-                    </p>
-                  </div>
-                </div>
+                <AreaChartComponent
+                  data={applicationData}
+                  xKey="date"
+                  yKeys={[
+                    { key: 'applications', color: '#10B981', name: 'Total Applications' },
+                    { key: 'accepted', color: '#3B82F6', name: 'Accepted' },
+                    { key: 'rejected', color: '#EF4444', name: 'Rejected' }
+                  ]}
+                  height={300}
+                  showGrid={true}
+                  showLegend={true}
+                  stacked={false}
+                />
               </GlassCard>
             </AnimatedCard>
 
-            {/* Success Rate Chart Placeholder */}
+            {/* Success Rate Chart */}
             <AnimatedCard animation="fadeUp" delay={300}>
               <GlassCard className="p-6">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-bold text-gray-900">Success Rate Distribution</h3>
+                  <h3 className="text-lg font-bold text-gray-900">Application Status Distribution</h3>
                   <ChartBarIcon className="w-6 h-6 text-gray-400" />
                 </div>
-                <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg p-8 flex items-center justify-center min-h-[300px]">
-                  <div className="text-center">
-                    <ChartBarIcon className="w-16 h-16 text-orange-400 mx-auto mb-4" />
-                    <p className="text-gray-600 font-medium mb-2">Chart Component</p>
-                    <p className="text-sm text-gray-500">
-                      {/* TODO: Add success rate pie/donut chart */}
-                      TODO: Add success rate pie chart
-                    </p>
-                  </div>
-                </div>
+                <PieChartComponent
+                  data={successRateData}
+                  dataKey="value"
+                  nameKey="name"
+                  colors={['#10B981', '#F59E0B', '#EF4444']}
+                  height={300}
+                  showLegend={true}
+                  innerRadius={60}
+                  outerRadius={100}
+                  showLabels={true}
+                />
               </GlassCard>
             </AnimatedCard>
           </div>

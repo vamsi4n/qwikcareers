@@ -219,6 +219,29 @@ export interface NotificationState {
   error: string | null;
 }
 
+export interface AdminState {
+  users: any[];
+  selectedUser: any | null;
+  usersLoading: boolean;
+  usersPagination: { total: number; page: number; pages: number; limit: number } | null;
+  moderationQueue: any[];
+  selectedModerationItem: any | null;
+  moderationLoading: boolean;
+  moderationPagination: { total: number; page: number; pages: number; limit: number } | null;
+  platformAnalytics: any | null;
+  userAnalytics: any | null;
+  jobAnalytics: any | null;
+  recentActivity: any | null;
+  analyticsLoading: boolean;
+  analyticsPeriod: '7days' | '30days' | '90days' | 'all';
+  systemSettings: any | null;
+  settingsLoading: boolean;
+  auditLogs: any[];
+  auditLogsLoading: boolean;
+  auditLogsPagination: { total: number; page: number; pages: number; limit: number } | null;
+  error: string | null;
+}
+
 export interface RootState {
   auth: AuthState;
   jobs: JobState;
@@ -227,6 +250,7 @@ export interface RootState {
   user: UserState;
   messages: MessageState;
   notifications: NotificationState;
+  admin: AdminState;
 }
 
 // API Response Types

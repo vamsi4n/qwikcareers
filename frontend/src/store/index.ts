@@ -8,6 +8,7 @@ import applicationReducer from './slices/applicationSlice';
 import companyReducer from './slices/companySlice';
 import notificationReducer from './slices/notificationSlice';
 import messageReducer from './slices/messageSlice';
+import adminReducer from './slices/adminSlice';
 
 export const store = configureStore({
   reducer: {
@@ -18,6 +19,7 @@ export const store = configureStore({
     companies: companyReducer,
     notifications: notificationReducer,
     messages: messageReducer,
+    admin: adminReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

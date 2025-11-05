@@ -6,6 +6,14 @@ const compression = require('compression');
 const morgan = require('morgan');
 
 const authRoutes = require('./modules/auth/routes/auth.routes');
+const userRoutes = require('./modules/users/routes/user.routes');
+const jobSeekerRoutes = require('./modules/jobseekers/routes/jobseeker.routes');
+const employerRoutes = require('./modules/employers/routes/employer.routes');
+const companyRoutes = require('./modules/companies/routes/company.routes');
+const jobRoutes = require('./modules/jobs/routes/job.routes');
+const applicationRoutes = require('./modules/applications/routes/application.routes');
+const savedJobRoutes = require('./modules/saved-jobs/routes/saved-job.routes');
+const jobAlertRoutes = require('./modules/job-alerts/routes/job-alert.routes');
 const { errorConverter, errorHandler } = require('./shared/middleware/error-handler.middleware');
 const notFound = require('./shared/middleware/not-found.middleware');
 const ApiError = require('./shared/utils/ApiError');
@@ -42,6 +50,14 @@ app.get('/health', (req, res) => {
 
 // API routes
 app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/users', userRoutes);
+app.use('/api/v1/jobseekers', jobSeekerRoutes);
+app.use('/api/v1/employers', employerRoutes);
+app.use('/api/v1/companies', companyRoutes);
+app.use('/api/v1/jobs', jobRoutes);
+app.use('/api/v1/applications', applicationRoutes);
+app.use('/api/v1/saved-jobs', savedJobRoutes);
+app.use('/api/v1/job-alerts', jobAlertRoutes);
 
 // 404 handler
 app.use(notFound);

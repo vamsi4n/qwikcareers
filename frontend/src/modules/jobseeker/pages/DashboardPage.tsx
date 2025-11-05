@@ -1,5 +1,4 @@
 import { useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import {
   DocumentTextIcon,
@@ -16,13 +15,24 @@ import { getMyApplications } from '../../../store/slices/applicationSlice';
 import { getRecommendedJobs, getSavedJobs } from '../../../store/slices/jobSlice';
 import AnimatedCard from '../../../components/animations/AnimatedCard';
 import GlassCard from '../../../components/ui/GlassCard';
+import { useAppDispatch, useAppSelector } from '../../../store';
+import type { Application } from '../../../types';
+
+interface StatCard {
+  label: string;
+  value: number;
+  icon: React.ComponentType<{ className?: string }>;
+  color: string;
+  bgColor: string;
+  textColor: string;
+}
 
 export default function DashboardPage() {
   const navigate = useNavigate();
-  const dispatch = useDispatch();
-  const { user } = useSelector((state) => state.auth);
-  const { applications } = useSelector((state) => state.applications);
-  const { recommendedJobs, savedJobs } = useSelector((state) => state.jobs);
+  const dispatch = useAppDispatch();
+  const { user } = useAppSelector((state) => state.auth);
+  const { applications } = useAppSelector((state) => state.applications);
+  const { recommendedJobs, savedJobs } = useAppSelector((state) => state.jobs);
 
   useEffect(() => {
     dispatch(getMyApplications({ limit: 5 }));
@@ -30,7 +40,7 @@ export default function DashboardPage() {
     dispatch(getSavedJobs());
   }, [dispatch]);
 
-  const getStatusColor = (status) => {
+  const getStatusColor = (status: Application['status']): string => {
     switch (status) {
       case 'pending':
         return 'bg-yellow-100 text-yellow-800';
@@ -51,7 +61,7 @@ export default function DashboardPage() {
     }
   };
 
-  const stats = [
+  const stats: StatCard[] = [
     {
       label: 'Applications',
       value: applications.length || 0,
@@ -70,7 +80,7 @@ export default function DashboardPage() {
     },
     {
       label: 'Profile Views',
-      value: user?.profileViews || 0,
+      value: (user as any)?.profileViews || 0,
       icon: EyeIcon,
       color: 'green',
       bgColor: 'bg-green-100',
@@ -141,7 +151,7 @@ export default function DashboardPage() {
                     </button>
                   </div>
                 ) : (
-                  applications.slice(0, 5).map((application, index) => (
+                  applications.slice(0, 5).map((application) => (
                     <div
                       key={application._id}
                       onClick={() => navigate(`/applications/${application._id}`)}
@@ -150,10 +160,12 @@ export default function DashboardPage() {
                       <div className="flex justify-between items-start gap-3 mb-2">
                         <div className="flex-1">
                           <h3 className="font-bold text-gray-900 mb-1 hover:text-blue-600 transition">
-                            {application.job?.title || 'Job Title'}
+                            {typeof application.job === 'object' ? application.job?.title : 'Job Title'}
                           </h3>
                           <p className="text-sm text-blue-600 font-medium">
-                            {application.job?.company?.name || 'Company Name'}
+                            {typeof application.job === 'object' && typeof application.job.company === 'object'
+                              ? application.job.company?.name
+                              : 'Company Name'}
                           </p>
                         </div>
                         <span
@@ -212,7 +224,7 @@ export default function DashboardPage() {
                     >
                       <h3 className="font-bold text-gray-900 mb-1 group-hover:text-purple-600 transition">{job.title}</h3>
                       <p className="text-sm text-purple-600 font-medium mb-2">
-                        {job.company?.name || 'Company Name'}
+                        {typeof job.company === 'object' ? job.company?.name : 'Company Name'}
                       </p>
                       <div className="flex flex-wrap gap-2 text-xs">
                         <span className="flex items-center gap-1 text-gray-600 bg-blue-50 px-2 py-1 rounded">

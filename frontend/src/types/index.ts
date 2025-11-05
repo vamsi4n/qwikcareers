@@ -95,6 +95,40 @@ export interface Application {
   updatedAt: string;
 }
 
+// Messaging Types
+export interface Message {
+  _id: string;
+  conversation: string;
+  sender: User | string;
+  recipient: User | string;
+  content: string;
+  read: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Conversation {
+  _id: string;
+  participants: User[];
+  lastMessage?: Message;
+  unreadCount?: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Notification Types
+export interface Notification {
+  _id: string;
+  user: User | string;
+  type: 'application_update' | 'message' | 'interview' | 'job_alert' | 'profile_view' | 'system';
+  title: string;
+  message: string;
+  link?: string;
+  read: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 // Profile Types
 export interface JobSeekerProfile extends User {
   headline?: string;
@@ -175,7 +209,22 @@ export interface CompanyState {
 }
 
 export interface UserState {
-  profile: JobSeekerProfile | null;
+  profile: User | null;
+  isLoading: boolean;
+  error: string | null;
+}
+
+export interface MessageState {
+  conversations: Conversation[];
+  currentConversation: Conversation | null;
+  messages: Message[];
+  isLoading: boolean;
+  error: string | null;
+}
+
+export interface NotificationState {
+  notifications: Notification[];
+  unreadCount: number;
   isLoading: boolean;
   error: string | null;
 }
@@ -186,6 +235,8 @@ export interface RootState {
   applications: ApplicationState;
   companies: CompanyState;
   user: UserState;
+  messages: MessageState;
+  notifications: NotificationState;
 }
 
 // API Response Types

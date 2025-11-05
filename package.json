@@ -1,0 +1,53 @@
+{
+  "name": "qwikcareers",
+  "version": "1.0.0",
+  "description": "Comprehensive job portal application with web and mobile support",
+  "private": true,
+  "workspaces": [
+    "backend",
+    "frontend",
+    "mobile"
+  ],
+  "scripts": {
+    "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install && cd ../mobile && npm install",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev:mobile": "cd mobile && npm start",
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "build:backend": "cd backend && npm run build",
+    "build:frontend": "cd frontend && npm run build",
+    "build:mobile:ios": "cd mobile && npm run build:ios",
+    "build:mobile:android": "cd mobile && npm run build:android",
+    "build": "npm run build:backend && npm run build:frontend",
+    "test:backend": "cd backend && npm test",
+    "test:frontend": "cd frontend && npm test",
+    "test:mobile": "cd mobile && npm test",
+    "test": "npm run test:backend && npm run test:frontend && npm run test:mobile",
+    "lint:backend": "cd backend && npm run lint",
+    "lint:frontend": "cd frontend && npm run lint",
+    "lint:mobile": "cd mobile && npm run lint",
+    "lint": "npm run lint:backend && npm run lint:frontend && npm run lint:mobile",
+    "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,css,scss,md}\"",
+    "clean": "rm -rf node_modules backend/node_modules frontend/node_modules mobile/node_modules",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:logs": "docker-compose logs -f"
+  },
+  "keywords": [
+    "job-portal",
+    "recruitment",
+    "hiring",
+    "careers",
+    "job-board"
+  ],
+  "author": "QwikCareers Team",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.0",
+    "prettier": "^3.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  }
+}

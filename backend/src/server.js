@@ -1,15 +1,28 @@
+const http = require('http');
 const app = require('./app');
 const connectDB = require('./shared/database/connection');
 const logger = require('./shared/utils/logger');
+const { initializeSocket } = require('./config/socket.config');
+const { initializeSocketService } = require('./services/socket.service');
 
 const PORT = process.env.PORT || 5000;
 
 // Connect to database
 connectDB();
 
+// Create HTTP server
+const server = http.createServer(app);
+
+// Initialize Socket.IO
+const io = initializeSocket(server);
+
+// Initialize socket service
+initializeSocketService(io);
+
 // Start server
-const server = app.listen(PORT, () => {
+server.listen(PORT, () => {
   logger.info(`Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
+  logger.info(`Socket.IO server initialized and ready`);
 });
 
 // Handle unhandled promise rejections

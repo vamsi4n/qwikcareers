@@ -607,6 +607,54 @@ export const adminSlice = createSlice({
     clearSelectedModerationItem: (state) => {
       state.selectedModerationItem = null;
     },
+
+    // ==================== WEBSOCKET REAL-TIME UPDATES ====================
+
+    // Add new moderation report from WebSocket
+    addModerationReport: (state, action: PayloadAction<any>) => {
+      state.moderationQueue = [action.payload, ...state.moderationQueue];
+      if (state.moderationPagination) {
+        state.moderationPagination.total += 1;
+      }
+    },
+
+    // Update existing moderation report from WebSocket
+    updateModerationReport: (state, action: PayloadAction<any>) => {
+      const index = state.moderationQueue.findIndex(
+        (report) => report._id === action.payload._id
+      );
+      if (index !== -1) {
+        state.moderationQueue[index] = action.payload;
+      }
+    },
+
+    // Remove moderation report from list (resolved)
+    removeModerationReport: (state, action: PayloadAction<string>) => {
+      state.moderationQueue = state.moderationQueue.filter(
+        (report) => report._id !== action.payload
+      );
+      if (state.moderationPagination) {
+        state.moderationPagination.total = Math.max(0, state.moderationPagination.total - 1);
+      }
+    },
+
+    // Update user in users list from WebSocket
+    updateUserInList: (state, action: PayloadAction<any>) => {
+      const index = state.users.findIndex(
+        (user) => user._id === action.payload._id
+      );
+      if (index !== -1) {
+        state.users[index] = { ...state.users[index], ...action.payload };
+      }
+    },
+
+    // Add new user to list from WebSocket
+    addUserToList: (state, action: PayloadAction<any>) => {
+      state.users = [action.payload, ...state.users];
+      if (state.usersPagination) {
+        state.usersPagination.total += 1;
+      }
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -950,6 +998,11 @@ export const {
   clearError,
   clearSelectedUser,
   clearSelectedModerationItem,
+  addModerationReport,
+  updateModerationReport,
+  removeModerationReport,
+  updateUserInList,
+  addUserToList,
 } = adminSlice.actions;
 
 // Export selectors

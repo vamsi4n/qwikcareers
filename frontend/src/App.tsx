@@ -7,6 +7,10 @@ import './index.css';
 import MainLayout from './shared/components/layout/MainLayout';
 import AuthLayout from './shared/components/layout/AuthLayout';
 
+// Real-time notifications
+import { SocketNotifications } from './shared/components/notifications';
+import SocketInitializer from './shared/components/common/SocketInitializer';
+
 // Public Pages
 import HomePage from './pages/HomePage';
 import AboutPage from './pages/AboutPage';
@@ -65,6 +69,12 @@ import MessagesPage from './modules/messaging/pages/MessagesPage';
 import NotificationsPage from './modules/notifications/pages/NotificationsPage';
 import NotificationSettingsPage from './modules/notifications/pages/NotificationSettingsPage';
 
+// Admin Pages
+import UsersPage from './modules/admin/pages/UsersPage';
+import ModerationPage from './modules/admin/pages/ModerationPage';
+import AnalyticsPage from './modules/admin/pages/AnalyticsPage';
+import SettingsPage from './modules/admin/pages/SettingsPage';
+
 // Protected Route Component
 import ProtectedRoute from './shared/components/common/ProtectedRoute';
 
@@ -72,6 +82,12 @@ function App() {
   return (
     <Provider store={store}>
       <BrowserRouter>
+        {/* Initialize WebSocket connection */}
+        <SocketInitializer />
+
+        {/* Real-time notifications UI */}
+        <SocketNotifications />
+
         <Routes>
           {/* Public Routes with Main Layout */}
           <Route element={<MainLayout />}>
@@ -141,6 +157,16 @@ function App() {
               <Route path="/messages" element={<MessagesPage />} />
               <Route path="/notifications" element={<NotificationsPage />} />
               <Route path="/notifications/settings" element={<NotificationSettingsPage />} />
+            </Route>
+          </Route>
+
+          {/* Protected Routes - Admin Only */}
+          <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
+            <Route element={<MainLayout />}>
+              <Route path="/admin/users" element={<UsersPage />} />
+              <Route path="/admin/moderation" element={<ModerationPage />} />
+              <Route path="/admin/analytics" element={<AnalyticsPage />} />
+              <Route path="/admin/settings" element={<SettingsPage />} />
             </Route>
           </Route>
 

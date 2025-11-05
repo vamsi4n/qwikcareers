@@ -34,7 +34,6 @@ import RecommendedJobsPage from './modules/jobs/pages/RecommendedJobsPage';
 import JobSeekerDashboardPage from './modules/jobseeker/pages/DashboardPage';
 import ProfilePage from './modules/jobseeker/pages/ProfilePage';
 import EditProfilePage from './modules/jobseeker/pages/EditProfilePage';
-import ResumePage from './modules/jobseeker/pages/ResumePage';
 import PreferencesPage from './modules/jobseeker/pages/PreferencesPage';
 
 // Application Pages
@@ -111,7 +110,6 @@ function App() {
               <Route path="/dashboard" element={<JobSeekerDashboardPage />} />
               <Route path="/profile" element={<ProfilePage />} />
               <Route path="/profile/edit" element={<EditProfilePage />} />
-              <Route path="/resume" element={<ResumePage />} />
               <Route path="/preferences" element={<PreferencesPage />} />
               <Route path="/applications" element={<MyApplicationsPage />} />
               <Route path="/applications/:id" element={<ApplicationDetailsPage />} />

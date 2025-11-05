@@ -73,22 +73,13 @@ export interface Application {
   _id: string;
   job: Job | string;
   jobseeker: User | string;
-  status: 'pending' | 'reviewing' | 'shortlisted' | 'interview' | 'accepted' | 'rejected' | 'withdrawn';
-  resume: string;
+  status: 'pending' | 'reviewing' | 'shortlisted' | 'accepted' | 'rejected' | 'withdrawn';
   coverLetter?: string;
   notes?: string;
   appliedDate?: string;
   viewedAt?: string;
-  interviewDate?: string;
-  interviewDetails?: {
-    date: string;
-    time: string;
-    location?: string;
-    meetingLink?: string;
-  };
   statusUpdatedAt?: string;
   shortlistedAt?: string;
-  interviewScheduledAt?: string;
   decidedAt?: string;
   reviewedAt?: string;
   createdAt: string;
@@ -120,7 +111,7 @@ export interface Conversation {
 export interface Notification {
   _id: string;
   user: User | string;
-  type: 'application_update' | 'message' | 'interview' | 'job_alert' | 'profile_view' | 'system';
+  type: 'application_update' | 'message' | 'job_alert' | 'profile_view' | 'system';
   title: string;
   message: string;
   link?: string;
@@ -139,7 +130,6 @@ export interface JobSeekerProfile extends User {
   education: Education[];
   certifications?: Certification[];
   portfolio?: string;
-  resume?: string;
   profileViews?: number;
   applicationsCount?: number;
   savedJobsCount?: number;

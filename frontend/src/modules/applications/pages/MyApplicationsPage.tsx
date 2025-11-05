@@ -31,8 +31,6 @@ export default function MyApplicationsPage() {
         return 'bg-blue-100 text-blue-800';
       case 'shortlisted':
         return 'bg-green-100 text-green-800';
-      case 'interview':
-        return 'bg-purple-100 text-purple-800';
       case 'accepted':
         return 'bg-green-100 text-green-800';
       case 'rejected':
@@ -60,7 +58,6 @@ export default function MyApplicationsPage() {
     pending: applications.filter((a) => a.status === 'pending').length,
     reviewing: applications.filter((a) => a.status === 'reviewing').length,
     shortlisted: applications.filter((a) => a.status === 'shortlisted').length,
-    interview: applications.filter((a) => a.status === 'interview').length,
     accepted: applications.filter((a) => a.status === 'accepted').length,
     rejected: applications.filter((a) => a.status === 'rejected').length,
   };
@@ -173,17 +170,6 @@ export default function MyApplicationsPage() {
                         </div>
                         <p className="font-semibold text-gray-900">
                           {new Date(application.viewedAt).toLocaleDateString()}
-                        </p>
-                      </div>
-                    )}
-                    {application.interviewDate && (
-                      <div>
-                        <div className="flex items-center gap-1.5 text-purple-600 mb-1">
-                          <CalendarIcon className="w-4 h-4" />
-                          <span className="font-medium">Interview</span>
-                        </div>
-                        <p className="font-semibold text-gray-900">
-                          {new Date(application.interviewDate).toLocaleDateString()}
                         </p>
                       </div>
                     )}

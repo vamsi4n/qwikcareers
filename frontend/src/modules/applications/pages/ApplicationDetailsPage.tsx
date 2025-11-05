@@ -8,7 +8,6 @@ import {
   CurrencyDollarIcon,
   CheckCircleIcon,
   DocumentTextIcon,
-  CalendarIcon,
   ChatBubbleLeftRightIcon
 } from '@heroicons/react/24/outline';
 import { getApplicationDetails, withdrawApplication } from '../../../store/slices/applicationSlice';
@@ -42,8 +41,6 @@ export default function ApplicationDetailsPage() {
         return 'bg-blue-100 text-blue-800 border-blue-300';
       case 'shortlisted':
         return 'bg-green-100 text-green-800 border-green-300';
-      case 'interview':
-        return 'bg-purple-100 text-purple-800 border-purple-300';
       case 'accepted':
         return 'bg-green-100 text-green-800 border-green-300';
       case 'rejected':
@@ -63,8 +60,6 @@ export default function ApplicationDetailsPage() {
         return '👀';
       case 'shortlisted':
         return '⭐';
-      case 'interview':
-        return '📅';
       case 'accepted':
         return '✅';
       case 'rejected':
@@ -110,7 +105,7 @@ export default function ApplicationDetailsPage() {
     );
   }
 
-  // Mock timeline data - replace with actual data from application
+  // Timeline data
   const timeline = [
     {
       status: 'submitted',
@@ -122,19 +117,13 @@ export default function ApplicationDetailsPage() {
       status: 'reviewing',
       date: application.reviewedAt,
       description: 'Application under review',
-      completed: ['reviewing', 'shortlisted', 'interview', 'accepted'].includes(application.status),
+      completed: ['reviewing', 'shortlisted', 'accepted'].includes(application.status),
     },
     {
       status: 'shortlisted',
       date: application.shortlistedAt,
-      description: 'Shortlisted for interview',
-      completed: ['shortlisted', 'interview', 'accepted'].includes(application.status),
-    },
-    {
-      status: 'interview',
-      date: application.interviewScheduledAt,
-      description: 'Interview scheduled',
-      completed: ['interview', 'accepted'].includes(application.status),
+      description: 'Shortlisted for consideration',
+      completed: ['shortlisted', 'accepted'].includes(application.status),
     },
     {
       status: 'decision',
@@ -227,79 +216,14 @@ export default function ApplicationDetailsPage() {
             </AnimatedCard>
 
             {/* Application Materials */}
-            <AnimatedCard animation="fadeUp" delay={100}>
-              <GlassCard className="p-6">
-                <h2 className="text-xl font-bold text-gray-900 mb-4">Application Materials</h2>
-                <div className="space-y-4">
-                  {application.resume && (
-                    <div className="border-2 border-gray-200 rounded-lg p-4 hover:border-blue-300 transition">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <DocumentTextIcon className="w-8 h-8 text-red-600" />
-                          <div>
-                            <p className="font-semibold text-gray-900">Resume</p>
-                            <p className="text-sm text-gray-600">PDF Document</p>
-                          </div>
-                        </div>
-                        <a
-                          href={application.resume}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition font-medium text-sm"
-                        >
-                          View
-                        </a>
-                      </div>
-                    </div>
-                  )}
-
-                  {application.coverLetter && (
-                    <div className="border-2 border-gray-200 rounded-lg p-4 bg-blue-50 border-blue-100">
-                      <h3 className="font-semibold text-blue-900 mb-2">Cover Letter</h3>
-                      <p className="text-sm text-gray-700 whitespace-pre-line leading-relaxed">
-                        {application.coverLetter}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </GlassCard>
-            </AnimatedCard>
-
-            {/* Interview Details (if scheduled) */}
-            {application.status === 'interview' && application.interviewDetails && (
-              <AnimatedCard animation="fadeUp" delay={200}>
-                <GlassCard className="p-6 bg-purple-50 border-2 border-purple-200">
-                  <div className="flex items-start gap-3">
-                    <CalendarIcon className="w-6 h-6 text-purple-600 flex-shrink-0 mt-1" />
-                    <div className="flex-1">
-                      <h3 className="text-lg font-bold text-purple-900 mb-3">Interview Scheduled</h3>
-                      <div className="space-y-2 text-sm text-purple-800">
-                        <p>
-                          <span className="font-semibold">Date:</span>{' '}
-                          {new Date(application.interviewDetails.date).toLocaleDateString()}
-                        </p>
-                        <p>
-                          <span className="font-semibold">Time:</span> {application.interviewDetails.time}
-                        </p>
-                        {application.interviewDetails.location && (
-                          <p>
-                            <span className="font-semibold">Location:</span> {application.interviewDetails.location}
-                          </p>
-                        )}
-                        {application.interviewDetails.meetingLink && (
-                          <p>
-                            <a
-                              href={application.interviewDetails.meetingLink}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-block bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition font-semibold mt-2"
-                            >
-                              Join Video Call
-                            </a>
-                          </p>
-                        )}
-                      </div>
-                    </div>
+            {application.coverLetter && (
+              <AnimatedCard animation="fadeUp" delay={100}>
+                <GlassCard className="p-6">
+                  <h2 className="text-xl font-bold text-gray-900 mb-4">Cover Letter</h2>
+                  <div className="border-2 border-gray-200 rounded-lg p-4 bg-blue-50 border-blue-100">
+                    <p className="text-sm text-gray-700 whitespace-pre-line leading-relaxed">
+                      {application.coverLetter}
+                    </p>
                   </div>
                 </GlassCard>
               </AnimatedCard>

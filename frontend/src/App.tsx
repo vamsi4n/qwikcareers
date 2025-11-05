@@ -74,6 +74,8 @@ import UsersPage from './modules/admin/pages/UsersPage';
 import ModerationPage from './modules/admin/pages/ModerationPage';
 import AnalyticsPage from './modules/admin/pages/AnalyticsPage';
 import SettingsPage from './modules/admin/pages/SettingsPage';
+import AuditLogsPage from './modules/admin/pages/AuditLogsPage';
+import PermissionsPage from './modules/admin/pages/PermissionsPage';
 
 // Protected Route Component
 import ProtectedRoute from './shared/components/common/ProtectedRoute';
@@ -167,6 +169,8 @@ function App() {
               <Route path="/admin/moderation" element={<ModerationPage />} />
               <Route path="/admin/analytics" element={<AnalyticsPage />} />
               <Route path="/admin/settings" element={<SettingsPage />} />
+              <Route path="/admin/audit-logs" element={<AuditLogsPage />} />
+              <Route path="/admin/permissions" element={<PermissionsPage />} />
             </Route>
           </Route>
 

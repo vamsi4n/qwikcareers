@@ -5,6 +5,7 @@ const Job = require('../../jobs/models/Job.model');
 const CompanyReview = require('../../reviews/models/CompanyReview.model');
 const InterviewReview = require('../../reviews/models/InterviewReview.model');
 const SalaryReview = require('../../reviews/models/SalaryReview.model');
+const socketService = require('../../../services/socket.service');
 
 /**
  * Get all moderation reports with filters
@@ -188,6 +189,9 @@ exports.approveContent = catchAsync(async (req, res) => {
     timestamp: new Date(),
   });
 
+  // Emit real-time event to all admins
+  socketService.emitModerationReportResolved(report);
+
   res.status(200).json({
     success: true,
     data: report,
@@ -247,6 +251,9 @@ exports.rejectReport = catchAsync(async (req, res) => {
     userAgent,
     timestamp: new Date(),
   });
+
+  // Emit real-time event to all admins
+  socketService.emitModerationReportResolved(report);
 
   res.status(200).json({
     success: true,
@@ -344,6 +351,9 @@ exports.removeContent = catchAsync(async (req, res) => {
     timestamp: new Date(),
   });
 
+  // Emit real-time event to all admins
+  socketService.emitModerationReportResolved(report);
+
   res.status(200).json({
     success: true,
     data: report,
@@ -401,6 +411,9 @@ exports.createModerationReport = catchAsync(async (req, res) => {
   const populatedReport = await ModerationQueue.findById(report._id)
     .populate('reportedBy', 'firstName lastName email avatar')
     .lean();
+
+  // Emit real-time event to all admins about new report
+  socketService.emitModerationReportCreated(populatedReport);
 
   res.status(201).json({
     success: true,

@@ -1,6 +1,7 @@
 const catchAsync = require('../../../shared/utils/catchAsync');
 const User = require('../../users/models/User.model');
 const AuditLog = require('../models/AuditLog.model');
+const socketService = require('../../../services/socket.service');
 
 /**
  * Get all users with pagination, filtering, and search
@@ -148,6 +149,18 @@ exports.updateUserStatus = catchAsync(async (req, res) => {
     userAgent,
     timestamp: new Date(),
   });
+
+  // Emit real-time event to admins and affected user
+  const userForSocket = {
+    _id: user._id,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    email: user.email,
+    isActive: user.isActive,
+    role: user.role,
+    status: status,
+  };
+  socketService.emitUserStatusChanged(userForSocket);
 
   res.status(200).json({
     success: true,

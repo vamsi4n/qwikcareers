@@ -1,4 +1,3 @@
-export { default as LineChartComponent } from './LineChartComponent';
-export { default as BarChartComponent } from './BarChartComponent';
-export { default as AreaChartComponent } from './AreaChartComponent';
-export { default as PieChartComponent } from './PieChartComponent';
+export { default as LineChart } from './LineChart';
+export { default as AreaChart } from './AreaChart';
+export { default as BarChart } from './BarChart';

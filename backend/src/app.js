@@ -21,6 +21,7 @@ const skillRoutes = require('./modules/skills/routes/skill.routes');
 const categoryRoutes = require('./modules/categories/routes/category.routes');
 const industryRoutes = require('./modules/industries/routes/industry.routes');
 const adminRoutes = require('./modules/admin/routes/admin.routes');
+const analyticsRoutes = require('./modules/analytics/routes/analytics.routes');
 const { errorConverter, errorHandler } = require('./shared/middleware/error-handler.middleware');
 const notFound = require('./shared/middleware/not-found.middleware');
 const ApiError = require('./shared/utils/ApiError');
@@ -72,6 +73,7 @@ app.use('/api/v1/skills', skillRoutes);
 app.use('/api/v1/categories', categoryRoutes);
 app.use('/api/v1/industries', industryRoutes);
 app.use('/api/v1/admin', adminRoutes);
+app.use('/api/v1/analytics', analyticsRoutes);
 
 // 404 handler
 app.use(notFound);

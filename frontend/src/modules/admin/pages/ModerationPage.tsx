@@ -15,152 +15,50 @@ import {
 } from '@heroicons/react/24/outline';
 import AnimatedCard from '../../../shared/components/animations/AnimatedCard';
 import GlassCard from '../../../shared/components/ui/GlassCard';
-
-interface ReportedContent {
-  _id: string;
-  type: 'job' | 'review' | 'message' | 'profile';
-  title: string;
-  reportedBy: {
-    name: string;
-    email: string;
-  };
-  reportedAt: string;
-  reason: string;
-  description: string;
-  severity: 'low' | 'medium' | 'high' | 'critical';
-  status: 'pending' | 'approved' | 'rejected';
-  contentId: string;
-  contentPreview: string;
-}
+import { useAppDispatch, useAppSelector } from '../../../store';
+import {
+  fetchModerationQueue,
+  approveContent,
+  rejectReport,
+  removeContent,
+  selectModerationQueue,
+  selectModerationLoading,
+  type ModerationItem
+} from '../../../store/slices/adminSlice';
 
 export default function ModerationPage() {
-  const [reports, setReports] = useState<ReportedContent[]>([]);
+  const dispatch = useAppDispatch();
+  const reports = useAppSelector(selectModerationQueue);
+  const isLoading = useAppSelector(selectModerationLoading);
+
   const [searchQuery, setSearchQuery] = useState('');
-  const [typeFilter, setTypeFilter] = useState<'all' | 'job' | 'review' | 'message' | 'profile'>('all');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
+  const [typeFilter, setTypeFilter] = useState<'all' | 'job' | 'profile' | 'application' | 'company' | 'message'>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'under_review' | 'approved' | 'rejected' | 'removed'>('all');
   const [severityFilter, setSeverityFilter] = useState<'all' | 'low' | 'medium' | 'high' | 'critical'>('all');
-  const [isLoading, setIsLoading] = useState(false);
-  const [selectedReport, setSelectedReport] = useState<ReportedContent | null>(null);
+  const [selectedReport, setSelectedReport] = useState<ModerationItem | null>(null);
   const [showActionMenu, setShowActionMenu] = useState<string | null>(null);
 
-  // Mock data - replace with actual API call
+  // Fetch moderation queue on component mount
   useEffect(() => {
-    // TODO: Replace with actual API call to fetch reported content
-    // Example: dispatch(fetchReportedContent());
-    setIsLoading(true);
-    setTimeout(() => {
-      setReports([
-        {
-          _id: '1',
-          type: 'job',
-          title: 'Senior Developer Position - Suspicious Listing',
-          reportedBy: {
-            name: 'John Doe',
-            email: 'john.doe@example.com'
-          },
-          reportedAt: '2024-03-01T10:30:00Z',
-          reason: 'Fraudulent posting',
-          description: 'This job posting appears to be a scam. It asks for payment upfront and has unrealistic salary promises.',
-          severity: 'critical',
-          status: 'pending',
-          contentId: 'job-001',
-          contentPreview: 'Make $10,000/week from home! No experience needed. Just pay $99 registration fee...'
-        },
-        {
-          _id: '2',
-          type: 'review',
-          title: 'Company Review - Inappropriate Language',
-          reportedBy: {
-            name: 'Jane Smith',
-            email: 'jane.smith@example.com'
-          },
-          reportedAt: '2024-03-02T14:20:00Z',
-          reason: 'Inappropriate content',
-          description: 'Review contains offensive language and personal attacks against company employees.',
-          severity: 'high',
-          status: 'pending',
-          contentId: 'review-002',
-          contentPreview: 'This company is terrible. The manager is [inappropriate content redacted]...'
-        },
-        {
-          _id: '3',
-          type: 'message',
-          title: 'Direct Message - Harassment',
-          reportedBy: {
-            name: 'Alice Johnson',
-            email: 'alice.j@example.com'
-          },
-          reportedAt: '2024-03-03T09:15:00Z',
-          reason: 'Harassment',
-          description: 'User is sending repeated unwanted messages despite being asked to stop.',
-          severity: 'high',
-          status: 'pending',
-          contentId: 'msg-003',
-          contentPreview: 'This is the 15th message from this user asking for personal information...'
-        },
-        {
-          _id: '4',
-          type: 'profile',
-          title: 'User Profile - Fake Identity',
-          reportedBy: {
-            name: 'Bob Williams',
-            email: 'bob.w@example.com'
-          },
-          reportedAt: '2024-03-04T16:45:00Z',
-          reason: 'Fake account',
-          description: 'This profile is using stolen photos and fake credentials.',
-          severity: 'medium',
-          status: 'pending',
-          contentId: 'profile-004',
-          contentPreview: 'Profile claims to be CEO of Fortune 500 company but uses stock photos...'
-        },
-        {
-          _id: '5',
-          type: 'job',
-          title: 'Job Posting - Discriminatory Requirements',
-          reportedBy: {
-            name: 'Carol Davis',
-            email: 'carol.d@example.com'
-          },
-          reportedAt: '2024-03-05T11:30:00Z',
-          reason: 'Discriminatory content',
-          description: 'Job posting includes age and gender requirements that violate equal opportunity laws.',
-          severity: 'critical',
-          status: 'approved',
-          contentId: 'job-005',
-          contentPreview: 'Looking for young female candidates only, age 21-25...'
-        },
-        {
-          _id: '6',
-          type: 'review',
-          title: 'Company Review - Spam Content',
-          reportedBy: {
-            name: 'David Miller',
-            email: 'david.m@example.com'
-          },
-          reportedAt: '2024-03-06T13:20:00Z',
-          reason: 'Spam',
-          description: 'Review is clearly spam promoting a competitor website.',
-          severity: 'low',
-          status: 'rejected',
-          contentId: 'review-006',
-          contentPreview: 'Check out our competitor site at [URL] for better jobs...'
-        }
-      ]);
-      setIsLoading(false);
-    }, 1000);
-  }, []);
+    dispatch(fetchModerationQueue({
+      contentType: typeFilter !== 'all' ? typeFilter : undefined,
+      status: statusFilter !== 'all' ? statusFilter : undefined,
+      severity: severityFilter !== 'all' ? severityFilter : undefined,
+      search: searchQuery || undefined,
+    }));
+  }, [dispatch, typeFilter, statusFilter, severityFilter]);
 
-  const filteredReports = reports.filter(report => {
-    const matchesSearch =
-      report.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      report.reason.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      report.reportedBy.name.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesType = typeFilter === 'all' || report.type === typeFilter;
-    const matchesStatus = statusFilter === 'all' || report.status === statusFilter;
-    const matchesSeverity = severityFilter === 'all' || report.severity === severityFilter;
-    return matchesSearch && matchesType && matchesStatus && matchesSeverity;
-  });
+  // Filter reports locally only by search query, other filters handled by API
+  const filteredReports = searchQuery
+    ? reports.filter(report => {
+        const reportedByName = typeof report.reportedBy === 'string' ? '' : report.reportedBy?.firstName + ' ' + report.reportedBy?.lastName;
+        return (
+          report.reason.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          (report.description?.toLowerCase().includes(searchQuery.toLowerCase()) || false) ||
+          reportedByName.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+      })
+    : reports;
 
   const getSeverityColor = (severity: string) => {
     switch (severity) {
@@ -206,22 +104,33 @@ export default function ModerationPage() {
   };
 
   const handleApproveReport = (reportId: string) => {
-    // TODO: Implement report approval - remove content and notify users
-    console.log('Approving report and removing content:', reportId);
-    setReports(reports.map(r => r._id === reportId ? { ...r, status: 'approved' as const } : r));
+    dispatch(approveContent({
+      reportId,
+      resolution: 'Content approved and kept active after review'
+    }));
     setShowActionMenu(null);
     setSelectedReport(null);
   };
 
   const handleRejectReport = (reportId: string) => {
-    // TODO: Implement report rejection - keep content and notify reporter
-    console.log('Rejecting report:', reportId);
-    setReports(reports.map(r => r._id === reportId ? { ...r, status: 'rejected' as const } : r));
+    dispatch(rejectReport({
+      reportId,
+      resolution: 'Report rejected - no policy violation found'
+    }));
     setShowActionMenu(null);
     setSelectedReport(null);
   };
 
-  const handleViewDetails = (report: ReportedContent) => {
+  const handleRemoveContent = (reportId: string) => {
+    dispatch(removeContent({
+      reportId,
+      resolution: 'Content removed for policy violation'
+    }));
+    setShowActionMenu(null);
+    setSelectedReport(null);
+  };
+
+  const handleViewDetails = (report: ModerationItem) => {
     setSelectedReport(report);
   };
 
@@ -315,9 +224,10 @@ export default function ModerationPage() {
                 >
                   <option value="all">All Types</option>
                   <option value="job">Jobs</option>
-                  <option value="review">Reviews</option>
-                  <option value="message">Messages</option>
                   <option value="profile">Profiles</option>
+                  <option value="application">Applications</option>
+                  <option value="company">Companies</option>
+                  <option value="message">Messages</option>
                 </select>
               </div>
 
@@ -330,8 +240,10 @@ export default function ModerationPage() {
                 >
                   <option value="all">All Status</option>
                   <option value="pending">Pending</option>
+                  <option value="under_review">Under Review</option>
                   <option value="approved">Approved</option>
                   <option value="rejected">Rejected</option>
+                  <option value="removed">Removed</option>
                 </select>
               </div>
 
@@ -375,12 +287,12 @@ export default function ModerationPage() {
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex items-start gap-4 flex-1">
                         <div className={`p-3 rounded-lg bg-gray-50 flex-shrink-0`}>
-                          {getTypeIcon(report.type)}
+                          {getTypeIcon(report.contentType)}
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-3 mb-2 flex-wrap">
                             <h3 className="text-lg font-bold text-gray-900">
-                              {report.title}
+                              {report.reason} - {report.contentType.charAt(0).toUpperCase() + report.contentType.slice(1)}
                             </h3>
                             <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border ${getSeverityColor(report.severity)}`}>
                               <ExclamationTriangleIcon className="w-4 h-4" />
@@ -396,18 +308,20 @@ export default function ModerationPage() {
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-600 mb-3">
                             <div className="flex items-center gap-2">
                               <UserCircleIcon className="w-4 h-4 text-gray-400" />
-                              <span>Reported by: {report.reportedBy.name}</span>
+                              <span>Reported by: {typeof report.reportedBy === 'string' ? report.reportedBy : `${report.reportedBy?.firstName || ''} ${report.reportedBy?.lastName || ''}`}</span>
                             </div>
                             <div className="flex items-center gap-2">
                               <ClockIcon className="w-4 h-4 text-gray-400" />
-                              <span>{new Date(report.reportedAt).toLocaleDateString()}</span>
+                              <span>{new Date(report.createdAt).toLocaleDateString()}</span>
                             </div>
                           </div>
                           <div className="mb-2">
-                            <span className="text-sm font-semibold text-gray-700">Reason: </span>
-                            <span className="text-sm text-gray-600">{report.reason}</span>
+                            <span className="text-sm font-semibold text-gray-700">Content ID: </span>
+                            <span className="text-sm text-gray-600 font-mono">{report.contentId}</span>
                           </div>
-                          <p className="text-sm text-gray-600 line-clamp-2">{report.description}</p>
+                          {report.description && (
+                            <p className="text-sm text-gray-600 line-clamp-2">{report.description}</p>
+                          )}
                         </div>
                       </div>
 
@@ -434,7 +348,14 @@ export default function ModerationPage() {
                                   className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-green-50 hover:text-green-600 flex items-center gap-2"
                                 >
                                   <CheckCircleIcon className="w-4 h-4" />
-                                  Approve & Remove
+                                  Approve Content
+                                </button>
+                                <button
+                                  onClick={() => handleRemoveContent(report._id)}
+                                  className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-600 flex items-center gap-2"
+                                >
+                                  <XCircleIcon className="w-4 h-4" />
+                                  Remove Content
                                 </button>
                                 <button
                                   onClick={() => handleRejectReport(report._id)}
@@ -495,7 +416,7 @@ export default function ModerationPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-600 mb-1">Content Type</label>
-                    <p className="text-gray-900 font-semibold capitalize">{selectedReport.type}</p>
+                    <p className="text-gray-900 font-semibold capitalize">{selectedReport.contentType}</p>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-600 mb-1">Content ID</label>
@@ -503,13 +424,21 @@ export default function ModerationPage() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-600 mb-1">Reported By</label>
-                    <p className="text-gray-900 font-semibold">{selectedReport.reportedBy.name}</p>
-                    <p className="text-gray-600 text-sm">{selectedReport.reportedBy.email}</p>
+                    {typeof selectedReport.reportedBy === 'string' ? (
+                      <p className="text-gray-900 font-semibold">{selectedReport.reportedBy}</p>
+                    ) : (
+                      <>
+                        <p className="text-gray-900 font-semibold">
+                          {selectedReport.reportedBy?.firstName} {selectedReport.reportedBy?.lastName}
+                        </p>
+                        <p className="text-gray-600 text-sm">{selectedReport.reportedBy?.email}</p>
+                      </>
+                    )}
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-600 mb-1">Reported Date</label>
                     <p className="text-gray-900 font-semibold">
-                      {new Date(selectedReport.reportedAt).toLocaleDateString('en-US', {
+                      {new Date(selectedReport.createdAt).toLocaleDateString('en-US', {
                         year: 'numeric',
                         month: 'long',
                         day: 'numeric',
@@ -519,23 +448,23 @@ export default function ModerationPage() {
                     </p>
                   </div>
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-600 mb-1">Report Title</label>
-                    <p className="text-gray-900 font-semibold">{selectedReport.title}</p>
-                  </div>
-                  <div className="md:col-span-2">
                     <label className="block text-sm font-medium text-gray-600 mb-1">Reason</label>
                     <p className="text-gray-900">{selectedReport.reason}</p>
                   </div>
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-600 mb-1">Description</label>
-                    <p className="text-gray-900">{selectedReport.description}</p>
-                  </div>
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-600 mb-1">Content Preview</label>
-                    <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                      <p className="text-gray-700 text-sm">{selectedReport.contentPreview}</p>
+                  {selectedReport.description && (
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-600 mb-1">Description</label>
+                      <p className="text-gray-900">{selectedReport.description}</p>
                     </div>
-                  </div>
+                  )}
+                  {selectedReport.resolution && (
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-600 mb-1">Resolution</label>
+                      <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                        <p className="text-gray-700 text-sm">{selectedReport.resolution}</p>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Actions */}
@@ -546,7 +475,14 @@ export default function ModerationPage() {
                       className="flex-1 bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition font-medium flex items-center justify-center gap-2"
                     >
                       <CheckCircleIcon className="w-5 h-5" />
-                      Approve & Remove Content
+                      Approve Content
+                    </button>
+                    <button
+                      onClick={() => handleRemoveContent(selectedReport._id)}
+                      className="flex-1 bg-orange-600 text-white px-6 py-3 rounded-lg hover:bg-orange-700 transition font-medium flex items-center justify-center gap-2"
+                    >
+                      <XCircleIcon className="w-5 h-5" />
+                      Remove Content
                     </button>
                     <button
                       onClick={() => handleRejectReport(selectedReport._id)}

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Cog6ToothIcon,
   EnvelopeIcon,
@@ -15,6 +15,13 @@ import {
 } from '@heroicons/react/24/outline';
 import AnimatedCard from '../../../shared/components/animations/AnimatedCard';
 import GlassCard from '../../../shared/components/ui/GlassCard';
+import { useAppDispatch, useAppSelector } from '../../../store';
+import {
+  fetchSystemSettings,
+  updateSystemSettings,
+  selectSystemSettings,
+  selectSettingsLoading
+} from '../../../store/slices/adminSlice';
 
 interface SystemSettings {
   general: {
@@ -52,13 +59,14 @@ interface SystemSettings {
 }
 
 export default function SettingsPage() {
-  const [isSaving, setIsSaving] = useState(false);
+  const dispatch = useAppDispatch();
+  const systemSettings = useAppSelector(selectSystemSettings);
+  const isLoading = useAppSelector(selectSettingsLoading);
+
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const [activeSection, setActiveSection] = useState<'general' | 'email' | 'security' | 'features'>('general');
 
-  // Mock initial settings - replace with actual API call
-  // TODO: Load settings from API on component mount
-  // Example: useEffect(() => { dispatch(fetchSystemSettings()); }, []);
+  // Local state for settings that syncs with Redux
   const [settings, setSettings] = useState<SystemSettings>({
     general: {
       siteName: 'QwikCareers',
@@ -94,6 +102,18 @@ export default function SettingsPage() {
     }
   });
 
+  // Fetch settings on mount
+  useEffect(() => {
+    dispatch(fetchSystemSettings());
+  }, [dispatch]);
+
+  // Update local state when Redux state changes
+  useEffect(() => {
+    if (systemSettings) {
+      setSettings(systemSettings);
+    }
+  }, [systemSettings]);
+
   const handleInputChange = (section: keyof SystemSettings, field: string, value: string | boolean) => {
     setSettings(prev => ({
       ...prev,
@@ -105,17 +125,11 @@ export default function SettingsPage() {
   };
 
   const handleSaveSettings = async () => {
-    setIsSaving(true);
-    // TODO: Implement API call to save settings
-    // Example: dispatch(updateSystemSettings(settings));
-    console.log('Saving settings:', settings);
-
-    // Simulate API call
-    setTimeout(() => {
-      setIsSaving(false);
+    const result = await dispatch(updateSystemSettings(settings));
+    if (result.type === updateSystemSettings.fulfilled.type) {
       setShowSuccessMessage(true);
       setTimeout(() => setShowSuccessMessage(false), 3000);
-    }, 1500);
+    }
   };
 
   const sections = [
@@ -689,10 +703,10 @@ export default function SettingsPage() {
                 </div>
                 <button
                   onClick={handleSaveSettings}
-                  disabled={isSaving}
+                  disabled={isLoading}
                   className="px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                 >
-                  {isSaving ? (
+                  {isLoading ? (
                     <>
                       <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                       Saving...

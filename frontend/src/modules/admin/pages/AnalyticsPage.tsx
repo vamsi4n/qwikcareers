@@ -64,95 +64,22 @@ export default function AnalyticsPage() {
     dispatch(setAnalyticsPeriod(period));
   };
 
-  // TODO: Replace with actual data from Redux state when backend is ready
-  // For now, using mock data structure that matches expected API response
-  const getStatsForPeriod = (period: TimePeriod): PlatformStats => {
-    // Mock data that changes based on selected period
-    const mockData: Record<TimePeriod, PlatformStats> = {
-      '7days': {
-        totalUsers: 1247,
-        totalJobs: 89,
-        totalApplications: 456,
-        activeCompanies: 34,
-        userGrowth: 8.2,
-        jobGrowth: 12.5,
-        applicationRate: 15.3,
-        successRate: 6.8
-      },
-      '30days': {
-        totalUsers: 5423,
-        totalJobs: 342,
-        totalApplications: 2156,
-        activeCompanies: 128,
-        userGrowth: 15.7,
-        jobGrowth: 22.4,
-        applicationRate: 18.9,
-        successRate: 8.4
-      },
-      '90days': {
-        totalUsers: 12890,
-        totalJobs: 987,
-        totalApplications: 5678,
-        activeCompanies: 289,
-        userGrowth: 34.5,
-        jobGrowth: 41.2,
-        applicationRate: 21.7,
-        successRate: 9.2
-      },
-      'all': {
-        totalUsers: 45673,
-        totalJobs: 3542,
-        totalApplications: 18934,
-        activeCompanies: 756,
-        userGrowth: 125.6,
-        jobGrowth: 98.3,
-        applicationRate: 24.5,
-        successRate: 11.3
-      }
-    };
-    return mockData[period];
+  // Use actual data from Redux state or provide default values
+  const stats: PlatformStats = platformAnalytics || {
+    totalUsers: 0,
+    totalJobs: 0,
+    totalApplications: 0,
+    activeCompanies: 0,
+    userGrowth: 0,
+    jobGrowth: 0,
+    applicationRate: 0,
+    successRate: 0
   };
 
-  const stats = getStatsForPeriod(timePeriod);
-
-  // Generate mock chart data based on time period
-  const generateChartData = (period: TimePeriod) => {
-    const dataPoints = period === '7days' ? 7 : period === '30days' ? 30 : period === '90days' ? 90 : 365;
-    const userGrowthData = [];
-    const jobPostingsData = [];
-    const applicationData = [];
-
-    for (let i = 0; i < Math.min(dataPoints, 30); i++) {
-      const date = new Date();
-      date.setDate(date.getDate() - (dataPoints - i - 1));
-      const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-
-      userGrowthData.push({
-        date: dateStr,
-        users: Math.floor(Math.random() * 200 + 100),
-        jobseekers: Math.floor(Math.random() * 150 + 70),
-        employers: Math.floor(Math.random() * 50 + 20)
-      });
-
-      jobPostingsData.push({
-        date: dateStr,
-        jobs: Math.floor(Math.random() * 50 + 10),
-        active: Math.floor(Math.random() * 40 + 5),
-        filled: Math.floor(Math.random() * 10 + 2)
-      });
-
-      applicationData.push({
-        date: dateStr,
-        applications: Math.floor(Math.random() * 300 + 100),
-        accepted: Math.floor(Math.random() * 50 + 10),
-        rejected: Math.floor(Math.random() * 100 + 20)
-      });
-    }
-
-    return { userGrowthData, jobPostingsData, applicationData };
-  };
-
-  const { userGrowthData, jobPostingsData, applicationData } = generateChartData(timePeriod);
+  // Extract chart data from analytics state
+  const userGrowthData = userAnalytics?.chartData || [];
+  const jobPostingsData = jobAnalytics?.chartData || [];
+  const applicationData = jobAnalytics?.applicationData || [];
 
   // Success rate pie chart data
   const successRateData = [

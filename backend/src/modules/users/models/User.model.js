@@ -42,6 +42,11 @@ const userSchema = new mongoose.Schema(
       enum: ['jobseeker', 'employer', 'admin'],
       default: 'jobseeker',
     },
+    customPermissions: {
+      type: [String],
+      default: undefined,
+      description: 'Custom permissions that override role-based permissions. If set, these are used instead of role permissions.',
+    },
     isEmailVerified: {
       type: Boolean,
       default: false,

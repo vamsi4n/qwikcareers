@@ -79,6 +79,17 @@ router.delete(
   userManagementController.deleteUser
 );
 
+/**
+ * @route   PATCH /api/admin/users/:userId/permissions
+ * @desc    Update user custom permissions (override role defaults)
+ * @access  Private (Admin only - requires 'manage_permissions' permission)
+ */
+router.patch(
+  '/users/:userId/permissions',
+  checkPermission('manage_permissions'),
+  userManagementController.updateUserPermissions
+);
+
 // ============================================================================
 // Content Moderation Routes
 // Endpoints for moderating user-generated content

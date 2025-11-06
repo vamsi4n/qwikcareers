@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
 import {
   MagnifyingGlassIcon,
   FunnelIcon,
@@ -17,69 +16,45 @@ import {
 import AnimatedCard from '../../../shared/components/animations/AnimatedCard';
 import GlassCard from '../../../shared/components/ui/GlassCard';
 import type { User } from '../../../types';
+import { useAppDispatch, useAppSelector } from '../../../store';
+import {
+  fetchUsers,
+  updateUserStatus,
+  deleteUser,
+  selectUsers,
+  selectUsersLoading,
+  selectSelectedUser
+} from '../../../store/slices/adminSlice';
 
 export default function UsersPage() {
-  const dispatch = useDispatch();
-  const [users, setUsers] = useState<User[]>([]);
+  const dispatch = useAppDispatch();
+  const users = useAppSelector(selectUsers);
+  const isLoading = useAppSelector(selectUsersLoading);
+  const selectedUserFromState = useAppSelector(selectSelectedUser);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState<'all' | 'jobseeker' | 'employer' | 'admin'>('all');
-  const [isLoading, setIsLoading] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [showActionMenu, setShowActionMenu] = useState<string | null>(null);
 
-  // Mock data - replace with actual API call
+  // Fetch users on component mount and when filters change
   useEffect(() => {
-    // TODO: Replace with actual API call
-    // dispatch(fetchAllUsers());
-    setIsLoading(true);
-    setTimeout(() => {
-      setUsers([
-        {
-          _id: '1',
-          firstName: 'John',
-          lastName: 'Doe',
-          email: 'john.doe@example.com',
-          role: 'jobseeker',
-          phone: '+1 (555) 123-4567',
-          profilePicture: '',
-          createdAt: '2024-01-15T10:30:00Z',
-          updatedAt: '2024-02-20T14:45:00Z'
-        },
-        {
-          _id: '2',
-          firstName: 'Jane',
-          lastName: 'Smith',
-          email: 'jane.smith@techcorp.com',
-          role: 'employer',
-          phone: '+1 (555) 234-5678',
-          profilePicture: '',
-          createdAt: '2024-01-20T09:15:00Z',
-          updatedAt: '2024-02-18T11:30:00Z'
-        },
-        {
-          _id: '3',
-          firstName: 'Admin',
-          lastName: 'User',
-          email: 'admin@qwikcareers.com',
-          role: 'admin',
-          phone: '+1 (555) 345-6789',
-          profilePicture: '',
-          createdAt: '2023-12-01T08:00:00Z',
-          updatedAt: '2024-02-25T16:20:00Z'
-        }
-      ]);
-      setIsLoading(false);
-    }, 1000);
-  }, [dispatch]);
+    dispatch(fetchUsers({
+      role: roleFilter !== 'all' ? roleFilter : undefined,
+      search: searchQuery || undefined,
+    }));
+  }, [dispatch, roleFilter]);
 
-  const filteredUsers = users.filter(user => {
-    const matchesSearch =
-      user.firstName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.lastName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesRole = roleFilter === 'all' || user.role === roleFilter;
-    return matchesSearch && matchesRole;
-  });
+  // Filter users locally only by search query, role filter handled by API
+  const filteredUsers = searchQuery
+    ? users.filter(user => {
+        return (
+          user.firstName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          user.lastName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          user.email.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+      })
+    : users;
 
   const getRoleColor = (role: string) => {
     switch (role) {
@@ -108,22 +83,22 @@ export default function UsersPage() {
   };
 
   const handleSuspendUser = (userId: string) => {
-    // TODO: Implement user suspension
-    console.log('Suspending user:', userId);
+    dispatch(updateUserStatus({ userId, status: 'suspended' }));
     setShowActionMenu(null);
+    setSelectedUser(null);
   };
 
   const handleActivateUser = (userId: string) => {
-    // TODO: Implement user activation
-    console.log('Activating user:', userId);
+    dispatch(updateUserStatus({ userId, status: 'active' }));
     setShowActionMenu(null);
+    setSelectedUser(null);
   };
 
   const handleDeleteUser = (userId: string) => {
     if (window.confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
-      // TODO: Implement user deletion
-      console.log('Deleting user:', userId);
+      dispatch(deleteUser(userId));
       setShowActionMenu(null);
+      setSelectedUser(null);
     }
   };
 

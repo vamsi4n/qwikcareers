@@ -236,3 +236,89 @@ exports.deleteUser = catchAsync(async (req, res) => {
     message: 'User deleted successfully',
   });
 });
+
+/**
+ * Update user custom permissions
+ * @route PATCH /api/admin/users/:userId/permissions
+ * @access Private (Admin only - requires 'manage_permissions' permission)
+ */
+exports.updateUserPermissions = catchAsync(async (req, res) => {
+  const { userId } = req.params;
+  const { customPermissions } = req.body;
+
+  // Validate customPermissions - should be an array of strings or null/undefined to reset
+  if (customPermissions !== null && customPermissions !== undefined) {
+    if (!Array.isArray(customPermissions)) {
+      return res.status(400).json({
+        success: false,
+        message: 'customPermissions must be an array of permission strings or null to reset',
+      });
+    }
+
+    // Validate each permission is a string
+    if (!customPermissions.every(p => typeof p === 'string')) {
+      return res.status(400).json({
+        success: false,
+        message: 'All permissions must be strings',
+      });
+    }
+  }
+
+  // Find user
+  const user = await User.findById(userId);
+
+  if (!user) {
+    return res.status(404).json({
+      success: false,
+      message: 'User not found',
+    });
+  }
+
+  // Store old permissions for audit log
+  const oldPermissions = user.customPermissions;
+
+  // Update custom permissions
+  // Set to undefined if null or empty array to use role-based permissions
+  user.customPermissions = (customPermissions === null || (Array.isArray(customPermissions) && customPermissions.length === 0))
+    ? undefined
+    : customPermissions;
+
+  await user.save();
+
+  // Extract admin info from request
+  const adminId = req.user._id;
+  const ipAddress = req.ip || req.headers['x-forwarded-for']?.split(',')[0]?.trim() || 'unknown';
+  const userAgent = req.headers['user-agent'] || 'unknown';
+
+  // Create audit log entry
+  await AuditLog.create({
+    admin: adminId,
+    action: 'update_permissions',
+    targetType: 'user',
+    targetId: userId,
+    details: {
+      userId: user._id,
+      userEmail: user.email,
+      userName: `${user.firstName} ${user.lastName}`,
+      userRole: user.role,
+      oldPermissions: oldPermissions || 'role-based',
+      newPermissions: user.customPermissions || 'role-based',
+    },
+    ipAddress,
+    userAgent,
+    timestamp: new Date(),
+  });
+
+  res.status(200).json({
+    success: true,
+    data: {
+      _id: user._id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      role: user.role,
+      customPermissions: user.customPermissions,
+    },
+    message: 'User permissions updated successfully',
+  });
+});

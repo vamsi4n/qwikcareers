@@ -7,6 +7,7 @@ export interface User {
   role: 'jobseeker' | 'employer' | 'admin';
   phone?: string;
   profilePicture?: string;
+  customPermissions?: string[]; // Custom permissions that override role-based permissions
   createdAt: string;
   updatedAt: string;
 }

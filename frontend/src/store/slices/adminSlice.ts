@@ -243,6 +243,35 @@ export const deleteUser = createAsyncThunk<
   }
 );
 
+export interface UpdateUserPermissionsParams {
+  userId: string;
+  customPermissions: string[] | null;
+}
+
+export const updateUserPermissions = createAsyncThunk<
+  User,
+  UpdateUserPermissionsParams,
+  { rejectValue: string }
+>(
+  'admin/updateUserPermissions',
+  async ({ userId, customPermissions }, thunkAPI) => {
+    try {
+      const response = await axios.patch<ApiResponse<User>>(
+        `/admin/users/${userId}/permissions`,
+        { customPermissions }
+      );
+      return response.data.data;
+    } catch (error) {
+      const axiosError = error as AxiosError<{ message: string }>;
+      const message =
+        axiosError.response?.data?.message ||
+        axiosError.message ||
+        'Failed to update user permissions';
+      return thunkAPI.rejectWithValue(message);
+    }
+  }
+);
+
 // ==================== CONTENT MODERATION ASYNC THUNKS ====================
 
 export const fetchModerationQueue = createAsyncThunk<
@@ -736,6 +765,29 @@ export const adminSlice = createSlice({
       .addCase(deleteUser.rejected, (state, action) => {
         state.usersLoading = false;
         state.error = action.payload || 'Failed to delete user';
+      })
+
+      // Update User Permissions
+      .addCase(updateUserPermissions.pending, (state) => {
+        state.usersLoading = true;
+        state.error = null;
+      })
+      .addCase(updateUserPermissions.fulfilled, (state, action) => {
+        state.usersLoading = false;
+        // Update user in the list
+        const index = state.users.findIndex(user => user._id === action.payload._id);
+        if (index !== -1) {
+          state.users[index] = action.payload;
+        }
+        // Update selected user if it's the same
+        if (state.selectedUser?._id === action.payload._id) {
+          state.selectedUser = action.payload;
+        }
+        state.error = null;
+      })
+      .addCase(updateUserPermissions.rejected, (state, action) => {
+        state.usersLoading = false;
+        state.error = action.payload || 'Failed to update user permissions';
       })
 
       // ==================== CONTENT MODERATION ====================

@@ -11,7 +11,8 @@ import {
   EnvelopeIcon,
   PhoneIcon,
   CalendarIcon,
-  EllipsisVerticalIcon
+  EllipsisVerticalIcon,
+  KeyIcon
 } from '@heroicons/react/24/outline';
 import AnimatedCard from '../../../shared/components/animations/AnimatedCard';
 import GlassCard from '../../../shared/components/ui/GlassCard';
@@ -21,10 +22,13 @@ import {
   fetchUsers,
   updateUserStatus,
   deleteUser,
+  updateUserPermissions,
   selectUsers,
   selectUsersLoading,
   selectSelectedUser
 } from '../../../store/slices/adminSlice';
+import PermissionManagementModal from '../components/PermissionManagementModal';
+import { hasPermission, Permission } from '../../../shared/utils/permissions';
 
 export default function UsersPage() {
   const dispatch = useAppDispatch();
@@ -36,6 +40,8 @@ export default function UsersPage() {
   const [roleFilter, setRoleFilter] = useState<'all' | 'jobseeker' | 'employer' | 'admin'>('all');
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [showActionMenu, setShowActionMenu] = useState<string | null>(null);
+  const [permissionModalUser, setPermissionModalUser] = useState<User | null>(null);
+  const [isPermissionModalOpen, setIsPermissionModalOpen] = useState(false);
 
   // Fetch users on component mount and when filters change
   useEffect(() => {
@@ -104,6 +110,30 @@ export default function UsersPage() {
 
   const handleViewDetails = (user: User) => {
     setSelectedUser(user);
+  };
+
+  const handleManagePermissions = (user: User) => {
+    setPermissionModalUser(user);
+    setIsPermissionModalOpen(true);
+    setShowActionMenu(null);
+  };
+
+  const handleSavePermissions = async (customPermissions: string[] | null) => {
+    if (!permissionModalUser) return;
+
+    await dispatch(updateUserPermissions({
+      userId: permissionModalUser._id,
+      customPermissions
+    }));
+
+    setIsPermissionModalOpen(false);
+    setPermissionModalUser(null);
+
+    // Refresh users list to show updated permissions
+    dispatch(fetchUsers({
+      role: roleFilter !== 'all' ? roleFilter : undefined,
+      search: searchQuery || undefined,
+    }));
   };
 
   const stats = [
@@ -225,7 +255,7 @@ export default function UsersPage() {
                         {user.firstName[0]}{user.lastName[0]}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-3 mb-2">
+                        <div className="flex items-center gap-3 mb-2 flex-wrap">
                           <h3 className="text-lg font-bold text-gray-900">
                             {user.firstName} {user.lastName}
                           </h3>
@@ -233,6 +263,12 @@ export default function UsersPage() {
                             {getRoleIcon(user.role)}
                             {user.role}
                           </span>
+                          {user.customPermissions && user.customPermissions.length > 0 && (
+                            <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700">
+                              <KeyIcon className="w-3 h-3" />
+                              Custom Permissions
+                            </span>
+                          )}
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-600">
                           <div className="flex items-center gap-2">
@@ -273,7 +309,15 @@ export default function UsersPage() {
                           <EllipsisVerticalIcon className="w-5 h-5 text-gray-600" />
                         </button>
                         {showActionMenu === user._id && (
-                          <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10">
+                          <div className="absolute right-0 mt-2 w-52 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10">
+                            <button
+                              onClick={() => handleManagePermissions(user)}
+                              className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center gap-2"
+                            >
+                              <KeyIcon className="w-4 h-4" />
+                              Manage Permissions
+                            </button>
+                            <div className="border-t border-gray-200 my-1"></div>
                             <button
                               onClick={() => handleActivateUser(user._id)}
                               className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-green-50 hover:text-green-600 flex items-center gap-2"
@@ -406,6 +450,20 @@ export default function UsersPage() {
               </div>
             </div>
           </div>
+        )}
+
+        {/* Permission Management Modal */}
+        {permissionModalUser && (
+          <PermissionManagementModal
+            user={permissionModalUser}
+            isOpen={isPermissionModalOpen}
+            onClose={() => {
+              setIsPermissionModalOpen(false);
+              setPermissionModalUser(null);
+            }}
+            onSave={handleSavePermissions}
+            isSaving={isLoading}
+          />
         )}
       </div>
     </div>

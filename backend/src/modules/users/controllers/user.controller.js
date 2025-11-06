@@ -39,6 +39,22 @@ const searchUsers = catchAsync(async (req, res) => {
   ApiResponse.success(res, result, 'Users retrieved successfully');
 });
 
+const getNotificationPreferences = catchAsync(async (req, res) => {
+  const user = await userService.getUserById(req.user._id);
+  ApiResponse.success(res, user.notificationPreferences || {}, 'Notification preferences retrieved successfully');
+});
+
+const updateNotificationPreferences = catchAsync(async (req, res) => {
+  const user = await userService.updateNotificationPreferences(req.user._id, req.body);
+  ApiResponse.success(res, user.notificationPreferences, 'Notification preferences updated successfully');
+});
+
+const unsubscribeFromEmails = catchAsync(async (req, res) => {
+  const { token } = req.params;
+  const user = await userService.unsubscribeFromEmails(token);
+  ApiResponse.success(res, null, 'Successfully unsubscribed from email notifications');
+});
+
 module.exports = {
   getProfile,
   updateProfile,
@@ -46,5 +62,8 @@ module.exports = {
   updatePreferences,
   deactivateAccount,
   deleteAccount,
-  searchUsers
+  searchUsers,
+  getNotificationPreferences,
+  updateNotificationPreferences,
+  unsubscribeFromEmails,
 };

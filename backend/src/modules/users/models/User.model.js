@@ -122,6 +122,83 @@ const userSchema = new mongoose.Schema(
         default: true,
       },
     },
+    notificationPreferences: {
+      emailFrequency: {
+        type: String,
+        enum: ['instant', 'daily', 'weekly', 'never'],
+        default: 'instant',
+      },
+      types: {
+        // Job Seeker notifications
+        applicationStatus: {
+          email: { type: Boolean, default: true },
+          inApp: { type: Boolean, default: true },
+          push: { type: Boolean, default: true },
+        },
+        newJobMatch: {
+          email: { type: Boolean, default: true },
+          inApp: { type: Boolean, default: true },
+          push: { type: Boolean, default: true },
+        },
+        newMessage: {
+          email: { type: Boolean, default: true },
+          inApp: { type: Boolean, default: true },
+          push: { type: Boolean, default: true },
+        },
+        interviewScheduled: {
+          email: { type: Boolean, default: true },
+          inApp: { type: Boolean, default: true },
+          push: { type: Boolean, default: true },
+        },
+        jobAlert: {
+          email: { type: Boolean, default: true },
+          inApp: { type: Boolean, default: true },
+          push: { type: Boolean, default: false },
+        },
+        profileView: {
+          email: { type: Boolean, default: false },
+          inApp: { type: Boolean, default: true },
+          push: { type: Boolean, default: false },
+        },
+        offerExtended: {
+          email: { type: Boolean, default: true },
+          inApp: { type: Boolean, default: true },
+          push: { type: Boolean, default: true },
+        },
+        // Employer notifications
+        applicationReceived: {
+          email: { type: Boolean, default: true },
+          inApp: { type: Boolean, default: true },
+          push: { type: Boolean, default: true },
+        },
+        subscriptionExpiring: {
+          email: { type: Boolean, default: true },
+          inApp: { type: Boolean, default: true },
+          push: { type: Boolean, default: false },
+        },
+        paymentSuccess: {
+          email: { type: Boolean, default: true },
+          inApp: { type: Boolean, default: true },
+          push: { type: Boolean, default: false },
+        },
+        paymentFailed: {
+          email: { type: Boolean, default: true },
+          inApp: { type: Boolean, default: true },
+          push: { type: Boolean, default: true },
+        },
+        // System notifications
+        system: {
+          email: { type: Boolean, default: true },
+          inApp: { type: Boolean, default: true },
+          push: { type: Boolean, default: true },
+        },
+      },
+    },
+    unsubscribeToken: {
+      type: String,
+      unique: true,
+      sparse: true,
+    },
   },
   {
     timestamps: true,
@@ -144,6 +221,15 @@ userSchema.virtual('fullName').get(function () {
 // Virtual for account locked status
 userSchema.virtual('isLocked').get(function () {
   return !!(this.lockUntil && this.lockUntil > Date.now());
+});
+
+// Pre-save hook to generate unsubscribe token
+userSchema.pre('save', function (next) {
+  if (this.isNew && !this.unsubscribeToken) {
+    const crypto = require('crypto');
+    this.unsubscribeToken = crypto.randomBytes(32).toString('hex');
+  }
+  next();
 });
 
 module.exports = mongoose.model('User', userSchema);

@@ -122,6 +122,63 @@ class UserService {
       pages: Math.ceil(total / limit)
     };
   }
+
+  async updateNotificationPreferences(userId, preferences) {
+    const user = await User.findByIdAndUpdate(
+      userId,
+      { $set: { notificationPreferences: preferences } },
+      { new: true, runValidators: true }
+    ).select('-password');
+
+    if (!user) {
+      throw new ApiError(httpStatus.NOT_FOUND, 'User not found');
+    }
+
+    return user;
+  }
+
+  async unsubscribeFromEmails(token) {
+    const user = await User.findOne({ unsubscribeToken: token });
+
+    if (!user) {
+      throw new ApiError(httpStatus.NOT_FOUND, 'Invalid unsubscribe token');
+    }
+
+    // Disable all email notifications
+    user.notificationPreferences = user.notificationPreferences || {};
+    user.notificationPreferences.emailFrequency = 'never';
+
+    // Disable email for all notification types
+    if (!user.notificationPreferences.types) {
+      user.notificationPreferences.types = {};
+    }
+
+    const notificationTypes = [
+      'applicationStatus',
+      'newJobMatch',
+      'newMessage',
+      'interviewScheduled',
+      'jobAlert',
+      'profileView',
+      'offerExtended',
+      'applicationReceived',
+      'subscriptionExpiring',
+      'paymentSuccess',
+      'paymentFailed',
+      'system',
+    ];
+
+    notificationTypes.forEach((type) => {
+      if (!user.notificationPreferences.types[type]) {
+        user.notificationPreferences.types[type] = {};
+      }
+      user.notificationPreferences.types[type].email = false;
+    });
+
+    await user.save();
+
+    return user;
+  }
 }
 
 module.exports = new UserService();

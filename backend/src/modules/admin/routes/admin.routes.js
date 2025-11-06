@@ -272,6 +272,28 @@ router.get(
   adminController.getAuditLogs
 );
 
+/**
+ * @route   GET /api/admin/audit-logs/export/csv
+ * @desc    Export audit logs as CSV file
+ * @access  Private (Admin only - requires 'view_analytics' permission)
+ */
+router.get(
+  '/audit-logs/export/csv',
+  checkPermission('view_analytics'),
+  adminController.exportAuditLogsCsv
+);
+
+/**
+ * @route   GET /api/admin/audit-logs/export/pdf
+ * @desc    Export audit logs as PDF file
+ * @access  Private (Admin only - requires 'view_analytics' permission)
+ */
+router.get(
+  '/audit-logs/export/pdf',
+  checkPermission('view_analytics'),
+  adminController.exportAuditLogsPdf
+);
+
 // ============================================================================
 // Export router
 // ============================================================================

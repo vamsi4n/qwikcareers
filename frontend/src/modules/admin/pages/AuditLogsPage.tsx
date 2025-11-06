@@ -7,6 +7,7 @@ import {
   ShieldCheckIcon,
   DocumentTextIcon,
   ArrowPathIcon,
+  DocumentArrowDownIcon,
 } from '@heroicons/react/24/outline';
 import AnimatedCard from '../../../shared/components/animations/AnimatedCard';
 import GlassCard from '../../../shared/components/ui/GlassCard';
@@ -17,6 +18,7 @@ import {
   selectAuditLogsLoading,
   selectAuditLogsPagination,
 } from '../../../store/slices/adminSlice';
+import axios from 'axios';
 
 type ActionType = 'create' | 'update' | 'delete' | 'suspend' | 'activate' | 'approve' | 'reject' | 'all';
 type TargetType = 'user' | 'job' | 'company' | 'review' | 'application' | 'system' | 'all';
@@ -51,6 +53,7 @@ export default function AuditLogsPage() {
   const [dateRange, setDateRange] = useState({ start: '', end: '' });
   const [currentPage, setCurrentPage] = useState(1);
   const [showFilters, setShowFilters] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   useEffect(() => {
     fetchLogs();
@@ -86,6 +89,45 @@ export default function AuditLogsPage() {
     setTargetTypeFilter('all');
     setDateRange({ start: '', end: '' });
     setCurrentPage(1);
+  };
+
+  const handleExport = async (format: 'csv' | 'pdf') => {
+    try {
+      setIsExporting(true);
+
+      // Build query params for export
+      const params: any = {};
+      if (actionFilter !== 'all') params.action = actionFilter;
+      if (targetTypeFilter !== 'all') params.targetType = targetTypeFilter;
+      if (dateRange.start) params.startDate = dateRange.start;
+      if (dateRange.end) params.endDate = dateRange.end;
+
+      // Call export API
+      const queryString = new URLSearchParams(params).toString();
+      const url = `/api/admin/audit-logs/export/${format}${queryString ? `?${queryString}` : ''}`;
+
+      const response = await axios.get(url, {
+        responseType: 'blob',
+      });
+
+      // Create download link
+      const blob = new Blob([response.data], {
+        type: format === 'csv' ? 'text/csv' : 'application/pdf',
+      });
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = `audit-logs-${new Date().toISOString().split('T')[0]}.${format}`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(downloadUrl);
+    } catch (error) {
+      console.error(`Failed to export ${format.toUpperCase()}:`, error);
+      alert(`Failed to export ${format.toUpperCase()}. Please try again.`);
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   const getActionBadgeColor = (action: string) => {
@@ -166,13 +208,36 @@ export default function AuditLogsPage() {
                 <span>Refresh</span>
               </button>
 
-              <button
-                onClick={() => setShowFilters(!showFilters)}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-              >
-                <FunnelIcon className="w-5 h-5" />
-                <span>Filters</span>
-              </button>
+              <div className="relative">
+                <button
+                  onClick={() => setShowFilters(!showFilters)}
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                >
+                  <FunnelIcon className="w-5 h-5" />
+                  <span>Filters</span>
+                </button>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => handleExport('csv')}
+                  disabled={isExporting}
+                  className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition disabled:opacity-50"
+                  title="Export as CSV"
+                >
+                  <DocumentArrowDownIcon className="w-5 h-5" />
+                  <span>CSV</span>
+                </button>
+                <button
+                  onClick={() => handleExport('pdf')}
+                  disabled={isExporting}
+                  className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition disabled:opacity-50"
+                  title="Export as PDF"
+                >
+                  <DocumentArrowDownIcon className="w-5 h-5" />
+                  <span>PDF</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>

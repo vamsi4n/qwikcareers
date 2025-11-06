@@ -2,6 +2,7 @@ const catchAsync = require('../../../shared/utils/catchAsync');
 const User = require('../../users/models/User.model');
 const AuditLog = require('../models/AuditLog.model');
 const socketService = require('../../../services/socket.service');
+const emailService = require('../../../shared/services/email/email.service');
 
 /**
  * Get all users with pagination, filtering, and search
@@ -162,6 +163,35 @@ exports.updateUserStatus = catchAsync(async (req, res) => {
   };
   socketService.emitUserStatusChanged(userForSocket);
 
+  // Send email notifications
+  try {
+    // Notify the user
+    await emailService.sendUserNotification(
+      user.email,
+      status === 'active' ? 'Account Activated' : 'Account Suspended',
+      status === 'active'
+        ? `Your QwikCareers account has been reactivated. You can now log in and access all features.`
+        : `Your QwikCareers account has been suspended. If you believe this is an error, please contact support.`
+    );
+
+    // Notify admins
+    await emailService.sendAdminNotification(
+      `User ${status === 'active' ? 'Activated' : 'Suspended'}`,
+      `Admin ${req.user.firstName} ${req.user.lastName} has ${status === 'active' ? 'activated' : 'suspended'} a user account.`,
+      {
+        'User': `${user.firstName} ${user.lastName}`,
+        'Email': user.email,
+        'User ID': user._id,
+        'Status': status,
+        'Admin': `${req.user.firstName} ${req.user.lastName}`,
+        'Time': new Date().toLocaleString(),
+      }
+    );
+  } catch (emailError) {
+    // Log error but don't fail the request
+    console.error('Email notification error:', emailError);
+  }
+
   res.status(200).json({
     success: true,
     data: {
@@ -230,6 +260,32 @@ exports.deleteUser = catchAsync(async (req, res) => {
     userAgent,
     timestamp: new Date(),
   });
+
+  // Send email notifications
+  try {
+    // Notify the user
+    await emailService.sendUserNotification(
+      user.email,
+      'Account Deleted',
+      `Your QwikCareers account has been deleted. If you believe this is an error, please contact support immediately.`
+    );
+
+    // Notify admins
+    await emailService.sendAdminNotification(
+      'User Account Deleted',
+      `Admin ${req.user.firstName} ${req.user.lastName} has deleted a user account.`,
+      {
+        'User': `${user.firstName} ${user.lastName}`,
+        'Email': user.email,
+        'User ID': user._id,
+        'Role': user.role,
+        'Admin': `${req.user.firstName} ${req.user.lastName}`,
+        'Time': new Date().toLocaleString(),
+      }
+    );
+  } catch (emailError) {
+    console.error('Email notification error:', emailError);
+  }
 
   res.status(200).json({
     success: true,
@@ -308,6 +364,36 @@ exports.updateUserPermissions = catchAsync(async (req, res) => {
     userAgent,
     timestamp: new Date(),
   });
+
+  // Send email notifications
+  try {
+    // Notify the user
+    await emailService.sendUserNotification(
+      user.email,
+      'Account Permissions Updated',
+      user.customPermissions
+        ? `Your account permissions have been updated. You now have ${user.customPermissions.length} custom permissions assigned by an administrator.`
+        : `Your account permissions have been reset to role-based defaults for the "${user.role}" role.`
+    );
+
+    // Notify admins
+    await emailService.sendAdminNotification(
+      'User Permissions Updated',
+      `Admin ${req.user.firstName} ${req.user.lastName} has updated user permissions.`,
+      {
+        'User': `${user.firstName} ${user.lastName}`,
+        'Email': user.email,
+        'User ID': user._id,
+        'Role': user.role,
+        'Permission Type': user.customPermissions ? 'Custom' : 'Role-based',
+        'Permission Count': user.customPermissions ? user.customPermissions.length : 'Default',
+        'Admin': `${req.user.firstName} ${req.user.lastName}`,
+        'Time': new Date().toLocaleString(),
+      }
+    );
+  } catch (emailError) {
+    console.error('Email notification error:', emailError);
+  }
 
   res.status(200).json({
     success: true,

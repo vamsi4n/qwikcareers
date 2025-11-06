@@ -1,70 +1,184 @@
 import { useState, useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import axios from 'axios';
+import { useSelector } from 'react-redux';
+import { RootState } from '../../../store';
+
+interface NotificationTypeSettings {
+  email: boolean;
+  inApp: boolean;
+  push: boolean;
+}
+
+interface NotificationPreferences {
+  emailFrequency: 'instant' | 'daily' | 'weekly' | 'never';
+  types: {
+    applicationStatus: NotificationTypeSettings;
+    newJobMatch: NotificationTypeSettings;
+    newMessage: NotificationTypeSettings;
+    interviewScheduled: NotificationTypeSettings;
+    jobAlert: NotificationTypeSettings;
+    profileView: NotificationTypeSettings;
+    offerExtended: NotificationTypeSettings;
+    applicationReceived: NotificationTypeSettings;
+    subscriptionExpiring: NotificationTypeSettings;
+    paymentSuccess: NotificationTypeSettings;
+    paymentFailed: NotificationTypeSettings;
+    system: NotificationTypeSettings;
+  };
+}
+
+const defaultNotificationSettings: NotificationPreferences = {
+  emailFrequency: 'instant',
+  types: {
+    applicationStatus: { email: true, inApp: true, push: true },
+    newJobMatch: { email: true, inApp: true, push: true },
+    newMessage: { email: true, inApp: true, push: true },
+    interviewScheduled: { email: true, inApp: true, push: true },
+    jobAlert: { email: true, inApp: true, push: false },
+    profileView: { email: false, inApp: true, push: false },
+    offerExtended: { email: true, inApp: true, push: true },
+    applicationReceived: { email: true, inApp: true, push: true },
+    subscriptionExpiring: { email: true, inApp: true, push: false },
+    paymentSuccess: { email: true, inApp: true, push: false },
+    paymentFailed: { email: true, inApp: true, push: true },
+    system: { email: true, inApp: true, push: true },
+  },
+};
+
+const notificationLabels = {
+  applicationStatus: {
+    title: 'Application Status Updates',
+    description: 'Get notified when your application status changes',
+    icon: '📋',
+  },
+  newJobMatch: {
+    title: 'New Job Matches',
+    description: 'Jobs that match your skills and preferences',
+    icon: '💼',
+  },
+  newMessage: {
+    title: 'New Messages',
+    description: 'Messages from employers or recruiters',
+    icon: '💬',
+  },
+  interviewScheduled: {
+    title: 'Interview Scheduled',
+    description: 'Interview invitations and scheduling updates',
+    icon: '📅',
+  },
+  jobAlert: {
+    title: 'Job Alerts',
+    description: 'New jobs matching your saved searches',
+    icon: '🔔',
+  },
+  profileView: {
+    title: 'Profile Views',
+    description: 'When employers view your profile',
+    icon: '👀',
+  },
+  offerExtended: {
+    title: 'Job Offers',
+    description: 'Job offer notifications',
+    icon: '🎉',
+  },
+  applicationReceived: {
+    title: 'Application Received',
+    description: 'New applications for your job postings',
+    icon: '📨',
+  },
+  subscriptionExpiring: {
+    title: 'Subscription Expiring',
+    description: 'Subscription renewal reminders',
+    icon: '⏰',
+  },
+  paymentSuccess: {
+    title: 'Payment Successful',
+    description: 'Payment confirmation notifications',
+    icon: '✅',
+  },
+  paymentFailed: {
+    title: 'Payment Failed',
+    description: 'Failed payment alerts',
+    icon: '❌',
+  },
+  system: {
+    title: 'System Notifications',
+    description: 'Important platform updates and announcements',
+    icon: '🔧',
+  },
+};
 
 export default function NotificationSettingsPage() {
-  const dispatch = useDispatch();
-  const { user } = useSelector((state) => state.auth);
-
-  const [settings, setSettings] = useState({
-    email: {
-      applicationStatus: true,
-      newMessages: true,
-      jobAlerts: true,
-      companyUpdates: false,
-      weeklyDigest: true,
-      marketingEmails: false,
-    },
-    push: {
-      applicationStatus: true,
-      newMessages: true,
-      jobAlerts: false,
-      companyUpdates: false,
-    },
-    sms: {
-      applicationStatus: false,
-      newMessages: false,
-      interviewReminders: true,
-    },
-  });
-
+  const user = useSelector((state: RootState) => state.auth.user);
+  const [preferences, setPreferences] = useState<NotificationPreferences>(defaultNotificationSettings);
+  const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
 
-  // Load user's notification settings
+  // Fetch notification preferences on mount
   useEffect(() => {
-    // TODO: Fetch user's notification settings from backend
-    // dispatch(getNotificationSettings());
+    fetchPreferences();
   }, []);
 
-  const handleToggle = (channel, type) => {
-    setSettings((prev) => ({
+  const fetchPreferences = async () => {
+    try {
+      setIsLoading(true);
+      const response = await axios.get('/api/v1/users/notification-preferences');
+      if (response.data.data && Object.keys(response.data.data).length > 0) {
+        setPreferences(response.data.data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch notification preferences:', error);
+      setErrorMessage('Failed to load preferences. Using default settings.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleToggle = (notificationType: keyof typeof preferences.types, channel: 'email' | 'inApp' | 'push') => {
+    setPreferences((prev) => ({
       ...prev,
-      [channel]: {
-        ...prev[channel],
-        [type]: !prev[channel][type],
+      types: {
+        ...prev.types,
+        [notificationType]: {
+          ...prev.types[notificationType],
+          [channel]: !prev.types[notificationType][channel],
+        },
       },
     }));
   };
 
-  const handleSave = async () => {
-    setIsSaving(true);
-    // TODO: Dispatch action to save settings
-    // await dispatch(updateNotificationSettings(settings));
-
-    setTimeout(() => {
-      setIsSaving(false);
-      setSuccessMessage('Settings saved successfully!');
-      setTimeout(() => setSuccessMessage(''), 3000);
-    }, 500);
+  const handleEmailFrequencyChange = (frequency: 'instant' | 'daily' | 'weekly' | 'never') => {
+    setPreferences((prev) => ({
+      ...prev,
+      emailFrequency: frequency,
+    }));
   };
 
-  const ToggleSwitch = ({ checked, onChange }) => (
+  const handleSave = async () => {
+    try {
+      setIsSaving(true);
+      setErrorMessage('');
+      await axios.patch('/api/v1/users/notification-preferences', preferences);
+      setSuccessMessage('Notification preferences saved successfully!');
+      setTimeout(() => setSuccessMessage(''), 3000);
+    } catch (error) {
+      console.error('Failed to save notification preferences:', error);
+      setErrorMessage('Failed to save preferences. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const ToggleSwitch = ({ checked, onChange, disabled = false }: { checked: boolean; onChange: () => void; disabled?: boolean }) => (
     <button
       type="button"
       onClick={onChange}
+      disabled={disabled}
       className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
         checked ? 'bg-blue-600' : 'bg-gray-200'
-      }`}
+      } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
     >
       <span
         className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
@@ -74,13 +188,37 @@ export default function NotificationSettingsPage() {
     </button>
   );
 
+  if (isLoading) {
+    return (
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        </div>
+      </div>
+    );
+  }
+
+  // Group notifications by user role
+  const jobSeekerNotifications = ['applicationStatus', 'newJobMatch', 'newMessage', 'interviewScheduled', 'jobAlert', 'profileView', 'offerExtended'];
+  const employerNotifications = ['applicationReceived', 'newMessage', 'subscriptionExpiring'];
+  const commonNotifications = ['paymentSuccess', 'paymentFailed', 'system'];
+
+  const getNotificationsByRole = () => {
+    if (user?.role === 'employer') {
+      return [...employerNotifications, ...commonNotifications];
+    }
+    return [...jobSeekerNotifications, ...commonNotifications];
+  };
+
+  const visibleNotifications = getNotificationsByRole();
+
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900">Notification Settings</h1>
         <p className="text-gray-600 mt-2">
-          Manage how and when you receive notifications
+          Manage how and when you receive notifications across different channels
         </p>
       </div>
 
@@ -96,227 +234,144 @@ export default function NotificationSettingsPage() {
         </div>
       )}
 
-      <div className="space-y-6">
-        {/* Email Notifications */}
-        <div className="bg-white rounded-lg shadow">
-          <div className="p-6 border-b border-gray-200">
-            <div className="flex items-center">
-              <svg className="w-6 h-6 text-blue-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-              </svg>
-              <div>
-                <h2 className="text-lg font-semibold text-gray-900">Email Notifications</h2>
-                <p className="text-sm text-gray-600">Notifications sent to {user?.email}</p>
-              </div>
-            </div>
+      {/* Error Message */}
+      {errorMessage && (
+        <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
+          <div className="flex items-center">
+            <svg className="w-5 h-5 text-red-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+            <p className="text-red-800">{errorMessage}</p>
           </div>
+        </div>
+      )}
 
-          <div className="p-6 space-y-4">
-            <div className="flex items-center justify-between py-3">
-              <div>
-                <p className="font-medium text-gray-900">Application Status Updates</p>
-                <p className="text-sm text-gray-600">Get notified when your application status changes</p>
-              </div>
-              <ToggleSwitch
-                checked={settings.email.applicationStatus}
-                onChange={() => handleToggle('email', 'applicationStatus')}
-              />
-            </div>
-
-            <div className="flex items-center justify-between py-3">
-              <div>
-                <p className="font-medium text-gray-900">New Messages</p>
-                <p className="text-sm text-gray-600">Receive email for new messages from employers</p>
-              </div>
-              <ToggleSwitch
-                checked={settings.email.newMessages}
-                onChange={() => handleToggle('email', 'newMessages')}
-              />
-            </div>
-
-            <div className="flex items-center justify-between py-3">
-              <div>
-                <p className="font-medium text-gray-900">Job Alerts</p>
-                <p className="text-sm text-gray-600">Email notifications for jobs matching your preferences</p>
-              </div>
-              <ToggleSwitch
-                checked={settings.email.jobAlerts}
-                onChange={() => handleToggle('email', 'jobAlerts')}
-              />
-            </div>
-
-            <div className="flex items-center justify-between py-3">
-              <div>
-                <p className="font-medium text-gray-900">Company Updates</p>
-                <p className="text-sm text-gray-600">News and updates from companies you follow</p>
-              </div>
-              <ToggleSwitch
-                checked={settings.email.companyUpdates}
-                onChange={() => handleToggle('email', 'companyUpdates')}
-              />
-            </div>
-
-            <div className="flex items-center justify-between py-3">
-              <div>
-                <p className="font-medium text-gray-900">Weekly Digest</p>
-                <p className="text-sm text-gray-600">Weekly summary of recommended jobs and activity</p>
-              </div>
-              <ToggleSwitch
-                checked={settings.email.weeklyDigest}
-                onChange={() => handleToggle('email', 'weeklyDigest')}
-              />
-            </div>
-
-            <div className="flex items-center justify-between py-3">
-              <div>
-                <p className="font-medium text-gray-900">Marketing Emails</p>
-                <p className="text-sm text-gray-600">Tips, promotions, and platform updates</p>
-              </div>
-              <ToggleSwitch
-                checked={settings.email.marketingEmails}
-                onChange={() => handleToggle('email', 'marketingEmails')}
-              />
+      {/* Email Frequency Setting */}
+      <div className="bg-white rounded-lg shadow mb-6">
+        <div className="p-6 border-b border-gray-200">
+          <div className="flex items-center">
+            <svg className="w-6 h-6 text-blue-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            </svg>
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">Email Frequency</h2>
+              <p className="text-sm text-gray-600">Control how often you receive email notifications</p>
             </div>
           </div>
         </div>
 
-        {/* Push Notifications */}
-        <div className="bg-white rounded-lg shadow">
-          <div className="p-6 border-b border-gray-200">
-            <div className="flex items-center">
-              <svg className="w-6 h-6 text-blue-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-              </svg>
-              <div>
-                <h2 className="text-lg font-semibold text-gray-900">Push Notifications</h2>
-                <p className="text-sm text-gray-600">Real-time notifications on your browser</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="p-6 space-y-4">
-            <div className="flex items-center justify-between py-3">
-              <div>
-                <p className="font-medium text-gray-900">Application Status Updates</p>
-                <p className="text-sm text-gray-600">Instant notifications for status changes</p>
-              </div>
-              <ToggleSwitch
-                checked={settings.push.applicationStatus}
-                onChange={() => handleToggle('push', 'applicationStatus')}
-              />
-            </div>
-
-            <div className="flex items-center justify-between py-3">
-              <div>
-                <p className="font-medium text-gray-900">New Messages</p>
-                <p className="text-sm text-gray-600">Get notified immediately when you receive a message</p>
-              </div>
-              <ToggleSwitch
-                checked={settings.push.newMessages}
-                onChange={() => handleToggle('push', 'newMessages')}
-              />
-            </div>
-
-            <div className="flex items-center justify-between py-3">
-              <div>
-                <p className="font-medium text-gray-900">Job Alerts</p>
-                <p className="text-sm text-gray-600">Push notifications for new matching jobs</p>
-              </div>
-              <ToggleSwitch
-                checked={settings.push.jobAlerts}
-                onChange={() => handleToggle('push', 'jobAlerts')}
-              />
-            </div>
-
-            <div className="flex items-center justify-between py-3">
-              <div>
-                <p className="font-medium text-gray-900">Company Updates</p>
-                <p className="text-sm text-gray-600">New jobs from companies you follow</p>
-              </div>
-              <ToggleSwitch
-                checked={settings.push.companyUpdates}
-                onChange={() => handleToggle('push', 'companyUpdates')}
-              />
-            </div>
+        <div className="p-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            {(['instant', 'daily', 'weekly', 'never'] as const).map((freq) => (
+              <button
+                key={freq}
+                onClick={() => handleEmailFrequencyChange(freq)}
+                className={`p-4 border-2 rounded-lg text-center transition ${
+                  preferences.emailFrequency === freq
+                    ? 'border-blue-600 bg-blue-50 text-blue-900'
+                    : 'border-gray-200 hover:border-blue-300'
+                }`}
+              >
+                <div className="font-semibold capitalize">{freq}</div>
+                <div className="text-xs text-gray-600 mt-1">
+                  {freq === 'instant' && 'Receive emails immediately'}
+                  {freq === 'daily' && 'One digest per day'}
+                  {freq === 'weekly' && 'One digest per week'}
+                  {freq === 'never' && 'No email notifications'}
+                </div>
+              </button>
+            ))}
           </div>
         </div>
+      </div>
 
-        {/* SMS Notifications */}
-        <div className="bg-white rounded-lg shadow">
-          <div className="p-6 border-b border-gray-200">
-            <div className="flex items-center">
-              <svg className="w-6 h-6 text-blue-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
-              </svg>
-              <div>
-                <h2 className="text-lg font-semibold text-gray-900">SMS Notifications</h2>
-                <p className="text-sm text-gray-600">Text messages sent to {user?.phone || 'your phone'}</p>
-              </div>
-            </div>
-          </div>
+      {/* Notification Types Table */}
+      <div className="bg-white rounded-lg shadow">
+        <div className="p-6 border-b border-gray-200">
+          <h2 className="text-lg font-semibold text-gray-900">Notification Types</h2>
+          <p className="text-sm text-gray-600 mt-1">Choose which notifications you want to receive for each type</p>
+        </div>
 
-          {!user?.phone ? (
-            <div className="p-6">
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                <div className="flex items-start">
-                  <svg className="w-5 h-5 text-yellow-600 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                  </svg>
-                  <div>
-                    <p className="text-yellow-800 font-medium">Phone number required</p>
-                    <p className="text-yellow-700 text-sm mt-1">
-                      Add your phone number in profile settings to enable SMS notifications
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="p-6 space-y-4">
-              <div className="flex items-center justify-between py-3">
-                <div>
-                  <p className="font-medium text-gray-900">Application Status Updates</p>
-                  <p className="text-sm text-gray-600">Text for critical status changes</p>
-                </div>
-                <ToggleSwitch
-                  checked={settings.sms.applicationStatus}
-                  onChange={() => handleToggle('sms', 'applicationStatus')}
-                />
-              </div>
-
-              <div className="flex items-center justify-between py-3">
-                <div>
-                  <p className="font-medium text-gray-900">New Messages</p>
-                  <p className="text-sm text-gray-600">SMS for urgent messages from employers</p>
-                </div>
-                <ToggleSwitch
-                  checked={settings.sms.newMessages}
-                  onChange={() => handleToggle('sms', 'newMessages')}
-                />
-              </div>
-
-              <div className="flex items-center justify-between py-3">
-                <div>
-                  <p className="font-medium text-gray-900">Interview Reminders</p>
-                  <p className="text-sm text-gray-600">Reminders before scheduled interviews</p>
-                </div>
-                <ToggleSwitch
-                  checked={settings.sms.interviewReminders}
-                  onChange={() => handleToggle('sms', 'interviewReminders')}
-                />
-              </div>
-
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-4">
-                <p className="text-blue-800 text-sm">
-                  Standard messaging rates may apply. You can opt out at any time.
-                </p>
-              </div>
-            </div>
-          )}
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Notification Type
+                </th>
+                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Email
+                </th>
+                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  In-App
+                </th>
+                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Push
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {visibleNotifications.map((notifType) => {
+                const typeKey = notifType as keyof typeof preferences.types;
+                const label = notificationLabels[typeKey];
+                return (
+                  <tr key={typeKey} className="hover:bg-gray-50">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center">
+                        <span className="text-2xl mr-3">{label.icon}</span>
+                        <div>
+                          <div className="text-sm font-medium text-gray-900">{label.title}</div>
+                          <div className="text-xs text-gray-500">{label.description}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <div className="flex justify-center">
+                        <ToggleSwitch
+                          checked={preferences.types[typeKey]?.email || false}
+                          onChange={() => handleToggle(typeKey, 'email')}
+                          disabled={preferences.emailFrequency === 'never'}
+                        />
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <div className="flex justify-center">
+                        <ToggleSwitch
+                          checked={preferences.types[typeKey]?.inApp || false}
+                          onChange={() => handleToggle(typeKey, 'inApp')}
+                        />
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <div className="flex justify-center">
+                        <ToggleSwitch
+                          checked={preferences.types[typeKey]?.push || false}
+                          onChange={() => handleToggle(typeKey, 'push')}
+                        />
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
 
         {/* Save Button */}
-        <div className="flex justify-end gap-3">
+        <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-between items-center">
+          <div className="text-sm text-gray-600">
+            {user?.unsubscribeToken && (
+              <span>
+                To unsubscribe from all emails,{' '}
+                <a
+                  href={`/api/v1/users/unsubscribe/${user.unsubscribeToken}`}
+                  className="text-blue-600 hover:text-blue-800 underline"
+                >
+                  click here
+                </a>
+              </span>
+            )}
+          </div>
           <button
             onClick={handleSave}
             disabled={isSaving}

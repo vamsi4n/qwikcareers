@@ -380,3 +380,319 @@ exports.getAuditLogs = catchAsync(async (req, res) => {
     message: 'Audit logs retrieved successfully',
   });
 });
+
+/**
+ * Export audit logs as CSV
+ * @route GET /api/admin/audit-logs/export/csv
+ * @access Private (Admin only)
+ */
+exports.exportAuditLogsCsv = catchAsync(async (req, res) => {
+  const AuditLog = require('../models/AuditLog.model');
+  const { startDate, endDate, admin, action, targetType } = req.query;
+
+  // Build filter query
+  const filter = {};
+
+  if (startDate || endDate) {
+    filter.timestamp = {};
+    if (startDate) {
+      filter.timestamp.$gte = new Date(startDate);
+    }
+    if (endDate) {
+      filter.timestamp.$lte = new Date(endDate);
+    }
+  }
+
+  if (admin) {
+    filter.admin = admin;
+  }
+
+  if (action) {
+    filter.action = action;
+  }
+
+  if (targetType) {
+    filter.targetType = targetType;
+  }
+
+  // Fetch audit logs with populated admin data
+  const logs = await AuditLog.find(filter)
+    .populate('admin', 'firstName lastName email')
+    .sort({ timestamp: -1 })
+    .lean();
+
+  // Generate CSV content
+  const csvRows = [];
+
+  // CSV Headers
+  csvRows.push([
+    'Timestamp',
+    'Admin Name',
+    'Admin Email',
+    'Action',
+    'Target Type',
+    'Target ID',
+    'IP Address',
+    'User Agent',
+    'Details',
+  ].join(','));
+
+  // CSV Data Rows
+  logs.forEach((log) => {
+    const adminName = log.admin
+      ? `${log.admin.firstName} ${log.admin.lastName}`
+      : 'Unknown';
+    const adminEmail = log.admin?.email || 'N/A';
+    const details = log.details
+      ? JSON.stringify(log.details).replace(/"/g, '""')
+      : '';
+    const userAgent = log.userAgent
+      ? log.userAgent.replace(/"/g, '""')
+      : '';
+
+    csvRows.push([
+      new Date(log.timestamp).toISOString(),
+      `"${adminName}"`,
+      adminEmail,
+      log.action,
+      log.targetType,
+      log.targetId,
+      log.ipAddress || '',
+      `"${userAgent}"`,
+      `"${details}"`,
+    ].join(','));
+  });
+
+  const csvContent = csvRows.join('\n');
+
+  // Set response headers for CSV download
+  const filename = `audit-logs-${new Date().toISOString().split('T')[0]}.csv`;
+  res.setHeader('Content-Type', 'text/csv');
+  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+
+  res.send(csvContent);
+});
+
+/**
+ * Export audit logs as PDF
+ * @route GET /api/admin/audit-logs/export/pdf
+ * @access Private (Admin only)
+ * @requires npm install pdfkit
+ */
+exports.exportAuditLogsPdf = catchAsync(async (req, res) => {
+  const AuditLog = require('../models/AuditLog.model');
+  const { startDate, endDate, admin, action, targetType } = req.query;
+
+  // Build filter query
+  const filter = {};
+
+  if (startDate || endDate) {
+    filter.timestamp = {};
+    if (startDate) {
+      filter.timestamp.$gte = new Date(startDate);
+    }
+    if (endDate) {
+      filter.timestamp.$lte = new Date(endDate);
+    }
+  }
+
+  if (admin) {
+    filter.admin = admin;
+  }
+
+  if (action) {
+    filter.action = action;
+  }
+
+  if (targetType) {
+    filter.targetType = targetType;
+  }
+
+  // Fetch audit logs with populated admin data
+  const logs = await AuditLog.find(filter)
+    .populate('admin', 'firstName lastName email')
+    .sort({ timestamp: -1 })
+    .limit(500) // Limit to 500 records for PDF
+    .lean();
+
+  try {
+    // Import PDFKit (make sure to install: npm install pdfkit)
+    const PDFDocument = require('pdfkit');
+
+    // Create a new PDF document
+    const doc = new PDFDocument({
+      size: 'A4',
+      margin: 50,
+      info: {
+        Title: 'QwikCareers Audit Logs',
+        Author: 'QwikCareers Admin',
+        Subject: 'Admin Activity Audit Logs',
+      },
+    });
+
+    // Set response headers for PDF download
+    const filename = `audit-logs-${new Date().toISOString().split('T')[0]}.pdf`;
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+
+    // Pipe the PDF to the response
+    doc.pipe(res);
+
+    // Add header
+    doc
+      .fontSize(20)
+      .fillColor('#1e40af')
+      .text('QwikCareers Audit Logs', { align: 'center' });
+
+    doc.moveDown();
+
+    // Add metadata
+    doc
+      .fontSize(10)
+      .fillColor('#6b7280')
+      .text(`Generated: ${new Date().toLocaleString()}`, { align: 'center' });
+
+    if (startDate || endDate) {
+      const dateRange = `Date Range: ${startDate ? new Date(startDate).toLocaleDateString() : 'All'} - ${endDate ? new Date(endDate).toLocaleDateString() : 'All'}`;
+      doc.text(dateRange, { align: 'center' });
+    }
+
+    if (action || targetType || admin) {
+      const filters = [];
+      if (action) filters.push(`Action: ${action}`);
+      if (targetType) filters.push(`Type: ${targetType}`);
+      if (admin) filters.push(`Admin: ${admin}`);
+      doc.text(`Filters: ${filters.join(', ')}`, { align: 'center' });
+    }
+
+    doc.moveDown();
+    doc
+      .fontSize(12)
+      .fillColor('#374151')
+      .text(`Total Records: ${logs.length}`, { align: 'center' });
+
+    doc.moveDown(2);
+
+    // Add table headers
+    const tableTop = doc.y;
+    const col1 = 50;
+    const col2 = 150;
+    const col3 = 250;
+    const col4 = 350;
+    const col5 = 450;
+
+    doc
+      .fontSize(9)
+      .fillColor('#1f2937')
+      .font('Helvetica-Bold')
+      .text('Timestamp', col1, tableTop, { width: 90 })
+      .text('Admin', col2, tableTop, { width: 90 })
+      .text('Action', col3, tableTop, { width: 90 })
+      .text('Target', col4, tableTop, { width: 90 })
+      .text('IP', col5, tableTop, { width: 90 });
+
+    // Draw header line
+    doc
+      .strokeColor('#e5e7eb')
+      .lineWidth(1)
+      .moveTo(col1, tableTop + 15)
+      .lineTo(545, tableTop + 15)
+      .stroke();
+
+    doc.font('Helvetica');
+
+    // Add table rows
+    let yPosition = tableTop + 25;
+    const rowHeight = 40;
+    const pageHeight = 750; // Leave room for page margins
+
+    logs.forEach((log, index) => {
+      // Check if we need a new page
+      if (yPosition > pageHeight) {
+        doc.addPage();
+        yPosition = 50;
+
+        // Re-add headers on new page
+        doc
+          .fontSize(9)
+          .fillColor('#1f2937')
+          .font('Helvetica-Bold')
+          .text('Timestamp', col1, yPosition, { width: 90 })
+          .text('Admin', col2, yPosition, { width: 90 })
+          .text('Action', col3, yPosition, { width: 90 })
+          .text('Target', col4, yPosition, { width: 90 })
+          .text('IP', col5, yPosition, { width: 90 });
+
+        doc
+          .strokeColor('#e5e7eb')
+          .lineWidth(1)
+          .moveTo(col1, yPosition + 15)
+          .lineTo(545, yPosition + 15)
+          .stroke();
+
+        doc.font('Helvetica');
+        yPosition += 25;
+      }
+
+      const timestamp = new Date(log.timestamp).toLocaleString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+      const adminName = log.admin
+        ? `${log.admin.firstName} ${log.admin.lastName}`
+        : 'Unknown';
+      const adminEmail = log.admin?.email || '';
+
+      doc
+        .fontSize(8)
+        .fillColor('#374151')
+        .text(timestamp, col1, yPosition, { width: 90 })
+        .text(adminName, col2, yPosition, { width: 90 })
+        .text(log.action.toUpperCase(), col3, yPosition, { width: 90 })
+        .text(log.targetType, col4, yPosition, { width: 90 })
+        .text(log.ipAddress || 'N/A', col5, yPosition, { width: 90 });
+
+      // Add admin email in smaller text
+      doc
+        .fontSize(7)
+        .fillColor('#6b7280')
+        .text(adminEmail, col2, yPosition + 10, { width: 90 });
+
+      // Draw row separator
+      doc
+        .strokeColor('#f3f4f6')
+        .lineWidth(0.5)
+        .moveTo(col1, yPosition + rowHeight - 5)
+        .lineTo(545, yPosition + rowHeight - 5)
+        .stroke();
+
+      yPosition += rowHeight;
+    });
+
+    // Add footer
+    doc
+      .fontSize(8)
+      .fillColor('#9ca3af')
+      .text(
+        'This document is confidential and intended for authorized personnel only.',
+        50,
+        750,
+        { align: 'center', width: 495 }
+      );
+
+    // Finalize the PDF
+    doc.end();
+  } catch (error) {
+    // If PDFKit is not installed, return an error message
+    if (error.code === 'MODULE_NOT_FOUND') {
+      return res.status(500).json({
+        success: false,
+        message: 'PDF export functionality requires pdfkit to be installed. Run: npm install pdfkit',
+        error: 'Missing dependency: pdfkit',
+      });
+    }
+    throw error;
+  }
+});
